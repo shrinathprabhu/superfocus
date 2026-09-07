@@ -40,7 +40,7 @@ function worker() {
         JSON.stringify([
           '/',
           '/superfocus',
-          '/audio/quiet-orbit.wav',
+          '/audio/quiet-orbit.mp3',
           '/assets/app.js',
         ]),
       ),
@@ -72,14 +72,14 @@ void test('offline navigation recovers cached app shell', async () => {
 void test('offline audio serves byte ranges with correct content headers', async () => {
   const w = worker();
   w.cache.set(
-    '/audio/quiet-orbit.wav',
+    '/audio/quiet-orbit.mp3',
     new Response(Uint8Array.from([1, 2, 3, 4, 5, 6]), {
-      headers: { 'content-type': 'audio/wav' },
+      headers: { 'content-type': 'audio/mpeg' },
     }),
   );
   const r = await fetchWorker(
     w,
-    new Request('https://focus.test/audio/quiet-orbit.wav', {
+    new Request('https://focus.test/audio/quiet-orbit.mp3', {
       headers: { Range: 'bytes=2-4' },
     }),
   );
@@ -90,19 +90,19 @@ void test('offline audio serves byte ranges with correct content headers', async
 void test('audio suffix and invalid ranges are handled offline', async () => {
   const w = worker();
   w.cache.set(
-    '/audio/quiet-orbit.wav',
+    '/audio/quiet-orbit.mp3',
     new Response(Uint8Array.from([1, 2, 3, 4])),
   );
   const suffix = await fetchWorker(
     w,
-    new Request('https://focus.test/audio/quiet-orbit.wav', {
+    new Request('https://focus.test/audio/quiet-orbit.mp3', {
       headers: { Range: 'bytes=-2' },
     }),
   );
   assert.deepEqual([...new Uint8Array(await suffix.arrayBuffer())], [3, 4]);
   const invalid = await fetchWorker(
     w,
-    new Request('https://focus.test/audio/quiet-orbit.wav', {
+    new Request('https://focus.test/audio/quiet-orbit.mp3', {
       headers: { Range: 'bytes=9-20' },
     }),
   );
@@ -124,7 +124,7 @@ void test('RSC, foreign requests and unrelated app paths do not pollute shell ca
   assert.equal(
     await fetchWorker(
       w,
-      new Request('https://other.test/audio/quiet-orbit.wav'),
+      new Request('https://other.test/audio/quiet-orbit.mp3'),
     ),
     undefined,
   );

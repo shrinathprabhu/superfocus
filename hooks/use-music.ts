@@ -101,7 +101,7 @@ export function useMusic(
     if (!a) return;
     let url = '';
     const local = locals.find((t) => t.id === selected.id);
-    url = local ? URL.createObjectURL(local.blob) : `/audio/${selected.id}.wav`;
+    url = local ? URL.createObjectURL(local.blob) : `/audio/${selected.id}.mp3`;
     a.src = url;
     a.volume = current.current?.settings.volume ?? 0.4;
     if (shouldPlay.current)

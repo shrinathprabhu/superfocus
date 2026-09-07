@@ -8,6 +8,7 @@ import {
 } from '@/lib/domain';
 import { readState, updateState } from '@/lib/storage';
 import { ringAlarm, scheduleAlarm, cancelScheduledAlarm } from '@/lib/audio';
+import { nextClockDelay } from '@/lib/clock';
 export function useSuperfocus() {
   const [state, setState] = useState<AppState | null>(null),
     [error, setError] = useState(''),
@@ -100,16 +101,31 @@ export function useSuperfocus() {
           ),
         );
     }
-    const interval = setInterval(() => setNow(Date.now()), 500);
     return () => {
       mounted = false;
-      clearInterval(interval);
       channel.current?.close();
       window.removeEventListener('online', connection);
       window.removeEventListener('offline', connection);
       document.removeEventListener('visibilitychange', refresh);
     };
   }, []);
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      clearTimeout(timeout);
+      const clock = Date.now();
+      setNow(clock);
+      // Idle workspaces only need date/deadline updates each minute. Running
+      // timers stay aligned to their deadline and recover immediately on return.
+      timeout = setTimeout(tick, nextClockDelay(state?.timer.endAt, clock));
+    };
+    tick();
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearTimeout(timeout);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [state?.timer.endAt]);
   useEffect(() => {
     if (!state?.timer.endAt) return;
     if (state.settings.alarm && scheduleAlarm(state.timer.endAt))

@@ -1827,3 +1827,223 @@ h2 {
 .skip-link:focus {
   transform: translateY(0);
 }
+
+/* Public product information stays below the working surface. */
+.product-guide {
+  margin-top: 3rem;
+  border-top: 1px solid #3c3347;
+  padding-top: 2.5rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #bdb3ca;
+  overflow-wrap: anywhere;
+}
+.product-guide :is(h2, h3, dt) {
+  color: #f0e7f9;
+}
+.product-guide h2 {
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  line-height: 1.35;
+  margin: 0.7rem 0 1rem;
+}
+.product-guide h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.product-guide :is(a, a:visited),
+.sidebar-makers a {
+  color: #d3b0f2;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.product-guide a:hover,
+.sidebar-makers a:hover {
+  color: #f0dfff;
+}
+.product-guide a:focus-visible,
+.sidebar-makers a:focus-visible {
+  outline: 2px solid #dab5fa;
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+.guide-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: center;
+}
+.guide-intro p {
+  max-width: 75ch;
+}
+.guide-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+.product-guide section {
+  margin-top: 2.5rem;
+}
+.product-guide [id] {
+  scroll-margin-top: 2rem;
+}
+.quick-start-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem 2.5rem;
+  padding-left: 1.5rem;
+  list-style: decimal;
+}
+.quick-start-list li::marker {
+  color: #d3b0f2;
+  font-weight: 600;
+}
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.75rem 2.5rem;
+}
+.faq-grid dt {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+.makers-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #4a3c59;
+  border-radius: 12px;
+  background: #211b2b;
+}
+.makers-panel .eyebrow {
+  display: block;
+  margin-bottom: 0.65rem;
+}
+.makers-panel h3 {
+  margin-bottom: 0.6rem;
+}
+.maker-destinations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.maker-destinations a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid #685078;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+.guide-resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+}
+.sidebar-makers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding: 0 0.5rem 0.5rem;
+}
+.page-heading h1 {
+  overflow-wrap: anywhere;
+}
+.main-content {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+.topbar {
+  padding-top: env(safe-area-inset-top);
+  min-height: calc(65px + env(safe-area-inset-top));
+}
+.workspace {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+@media (max-width: 900px) {
+  .guide-intro,
+  .makers-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+  .guide-links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+  }
+  .quick-start-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .faq-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .product-guide {
+    margin-top: 2rem;
+    padding-top: 2rem;
+  }
+  .editor-form [data-slot='input'],
+  .editor-form [data-slot='textarea'],
+  .settings-layout [data-slot='input'] {
+    font-size: 1rem;
+  }
+  .task-meta {
+    font-size: 0.875rem;
+  }
+  .makers-panel {
+    padding: 1.25rem;
+  }
+}
+@media (pointer: coarse) {
+  .icon-button,
+  .task-controls .icon-button,
+  .timer-top .icon-button,
+  .music-actions .icon-button,
+  .sound-title > .icon-button,
+  .sprint-navigation .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .status-picker,
+  .timer-tabs [data-slot='tabs-trigger'],
+  .planner-tabs [data-slot='tabs-trigger'],
+  .primary,
+  .secondary,
+  .picker {
+    min-height: 44px !important;
+  }
+  .task-controls {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .task-name {
+    min-height: 44px;
+  }
+  .sidebar-makers a,
+  .guide-resources a,
+  .guide-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .volume-control [data-slot='slider'] {
+    min-height: 44px;
+  }
+  .volume-control [data-slot='slider-thumb'] {
+    width: 24px;
+    height: 24px;
+  }
+}

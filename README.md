@@ -59,7 +59,19 @@ IndexedDB is origin-specific. `lowkey.tools` and `superfocus.lowkey.tools` neces
 
 App data is in the `superfocus` IndexedDB database, `state` store, `app` key. Personal audio blobs live in the `music` store. App assets are cached separately through Cache Storage. No browser localStorage is used. The database is versioned for future schema migrations. Clearing browser/site data removes local data; persistent-storage permission does not replace backups.
 
-The ten bundled tracks are synthesized entirely from original oscillators and note patterns. They contain no third-party recordings or samples. They are dedicated to the public domain under CC0; see `public/audio/LICENSE.txt`. Regenerate assets with `npm run generate:assets`.
+The ten bundled tracks are synthesized entirely from original oscillators and note patterns. They contain no third-party recordings or samples. They are dedicated to the public domain under CC0; see `public/audio/LICENSE.txt`. The committed 96 kbps mono MP3s total about 5.8 MB, replacing 21.2 MB of PCM WAV files. Regenerate assets with `npm run generate:assets` (requires local `ffmpeg` with `libmp3lame`; ordinary builds do not need it).
+
+## Search, answer engines and public launch
+
+Metadata includes a descriptive title, canonical URL, robots directives, Open Graph and Twitter summaries, author/publisher identity and PWA metadata. The server-rendered product guide, quick start and FAQ are visible without JavaScript. `lib/site-content.ts` is the common source for the visible answers, JSON-LD graph and Markdown guide. The graph describes the WebApplication, WebPage, FAQPage, creator and publisher; there are no invented ratings, reviews or claims of rich-result eligibility.
+
+`scripts/generate-discovery.mjs` runs before development and production builds. It generates `/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/superfocus/sitemap.xml`, `/superfocus/llms.txt` and `/superfocus/index.md`. Sitemaps include only the canonical app URL, not duplicate entry points, anchors or client-only views. The path-scoped discovery files can be integrated without replacing other lowkey.tools discovery content. The robots sitemap directive names the canonical host's path-scoped sitemap.
+
+The current Sites URL is owner-private. Search engines cannot index an authenticated preview. Before public launch, route the canonical app and its discovery files on lowkey.tools, complete the shared-origin asset/worker setup described above, and merge the SuperFocus entry into the existing domain sitemap and llms.txt. Preserve the main site's root robots.txt, add the SuperFocus sitemap declaration, and ensure its rules allow the app and assets. Cross-host sitemap submission requires ownership verification. Verify the public canonical URL in Google Search Console and Bing Webmaster Tools and submit its sitemap using the domain owner's accounts. Those accounts and DNS configuration are outside this checkout.
+
+`llms.txt` is a community proposal, not an indexing switch. Search and AI answer inclusion are not guaranteed. The implementation follows [Google's AI features guidance](https://developers.google.com/search/docs/appearance/ai-features) and the [llms.txt proposal](https://llmstxt.org/). OwlEye and Shrinath links are visible contextual credits in navigation, the maker section and footer; no hidden links, keyword stuffing or fabricated endorsements are used.
+
+Mobile improvements include safe-area padding, single-column guide layouts, larger touch controls and 16px form inputs. Idle clocks update once per minute, running clocks at the next displayed-second boundary, and both refresh immediately on visibility changes. Original alarm scheduling and elapsed-time recovery remain intact. Static fingerprinted assets receive long-lived cache headers; HTML and the service worker are not marked immutable.
 
 ## Validation
 

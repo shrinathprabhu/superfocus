@@ -1,17 +1,28 @@
 {
- "id": "/superfocus",
- "name": "SuperFocus",
- "short_name": "SuperFocus",
- "description": "Your personal focus space: Pomodoro, tasks, sprints, goals and music.",
- "start_url": "/superfocus",
- "scope": "/",
- "display": "standalone",
- "background_color": "#121218",
- "theme_color": "#121218",
- "lang": "en",
- "categories": ["productivity", "lifestyle"],
- "icons": [
-  {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-  {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
- ]
+  "id": "/superfocus",
+  "name": "SuperFocus",
+  "short_name": "SuperFocus",
+  "description": "Free Pomodoro timer, tasks, sprint planning, goals and 10 offline focus music tracks. Your workspace stays on your device.",
+  "start_url": "/superfocus",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#121218",
+  "theme_color": "#121218",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

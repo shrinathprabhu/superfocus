@@ -6,8 +6,8 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev",
-    "build": "vinext build && node scripts/build-sw.mjs",
+    "dev": "node --experimental-strip-types scripts/generate-discovery.mjs && vinext dev",
+    "build": "node --experimental-strip-types scripts/generate-discovery.mjs && vinext build && node scripts/build-sw.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",

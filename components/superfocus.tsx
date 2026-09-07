@@ -93,6 +93,7 @@ import {
   type Settings,
 } from '@/lib/domain';
 import { primeAlarm, ringAlarm } from '@/lib/audio';
+import { site } from '@/lib/site-content';
 type View = 'focus' | 'planner' | 'goals' | 'music' | 'settings';
 const navigation = [
   { icon: Timer, label: 'Focus', id: 'focus' },
@@ -105,9 +106,10 @@ const titles: Record<
   { title: string; eyebrow: string; description: string }
 > = {
   focus: {
-    title: 'One thing at a time',
+    title: 'SuperFocus: your focus space',
     eyebrow: 'MAKE ROOM FOR WHAT MATTERS',
-    description: 'A fresh session. A clear mind. Let’s make it count.',
+    description:
+      'A free Pomodoro timer, to-do list and focus music. One thing at a time.',
   },
   planner: {
     title: 'A little plan. A clear path',
@@ -163,7 +165,11 @@ function NavItem({
     </SidebarMenuItem>
   );
 }
-export default function SuperFocus() {
+export default function SuperFocus({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const model = useSuperfocus(),
     {
       state,
@@ -276,7 +282,7 @@ export default function SuperFocus() {
   useEffect(() => {
     document.title = running
       ? `${displayTime(time)} · ${s.timer.mode === 'focus' ? 'Focus' : 'Break'} — SuperFocus`
-      : 'SuperFocus — Your focus space';
+      : site.title;
   }, [running, time, s.timer.mode]);
   const settings = (patch: Partial<Settings>) =>
     change((v) => ({ ...v, settings: { ...v.settings, ...patch } }));
@@ -626,17 +632,19 @@ export default function SuperFocus() {
           <span className="byline">A PLACE FOR YOUR FOCUS</span>
         </SidebarHeader>
         <SidebarContent>
-          <span className="nav-label">WORKSPACE</span>
-          <SidebarMenu>
-            {navigation.map((n) => (
-              <NavItem
-                key={n.id}
-                {...n}
-                active={view === n.id}
-                onSelect={setView}
-              />
-            ))}
-          </SidebarMenu>
+          <nav aria-label="Workspace views">
+            <span className="nav-label">WORKSPACE</span>
+            <SidebarMenu>
+              {navigation.map((n) => (
+                <NavItem
+                  key={n.id}
+                  {...n}
+                  active={view === n.id}
+                  onSelect={setView}
+                />
+              ))}
+            </SidebarMenu>
+          </nav>
           <div className="sidebar-sprint">
             <span className="eyebrow">THIS SPRINT</span>
             <p>
@@ -708,6 +716,13 @@ export default function SuperFocus() {
           >
             a lowkey.tools creation <ArrowUpRight size={14} />
           </a>
+          <div className="sidebar-makers">
+            <a href="https://owleye.dev">By OwlEye Analytics ↗</a>
+            <a href="https://shrinath.me" rel="author">
+              Built by Shrinath ↗
+            </a>
+            <a href="#about">About SuperFocus & FAQ</a>
+          </div>
         </SidebarFooter>
       </Sidebar>
       <div className="workspace">
@@ -794,7 +809,7 @@ export default function SuperFocus() {
           {view === 'focus' && (
             <>
               <div className="focus-grid">
-                <section className="timer-card">
+                <section className="timer-card" aria-label="Pomodoro timer">
                   <div className="timer-top">
                     <span className="eyebrow">
                       {running
@@ -1604,6 +1619,7 @@ export default function SuperFocus() {
               </section>
             </div>
           )}
+          {children}
           <footer className="page-footer">
             <span>
               <i />

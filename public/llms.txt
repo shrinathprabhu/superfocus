@@ -1,0 +1,16 @@
+# SuperFocus
+
+> A free Pomodoro timer with to-do lists, sprint planning, goals and 10 focus music tracks. Install the offline PWA; your tasks stay on your device.
+
+SuperFocus is part of lowkey.tools, built by Shrinath Prabhu, from the makers of OwlEye Analytics.
+Canonical app URL: https://lowkey.tools/superfocus. The subdomain superfocus.lowkey.tools is an alternate entry point.
+Workspace data is device-local, with no account or cloud sync. Background alarms are best effort and cannot run reliably when the app is closed or suspended.
+
+## App guide
+- [SuperFocus facts and frequently asked questions](https://lowkey.tools/superfocus/index.md): Plain-text features, setup, privacy, music and alarm limitations.
+- [SuperFocus workspace](https://lowkey.tools/superfocus): The interactive Pomodoro timer and sprint planner.
+
+## Makers
+- [OwlEye Analytics](https://owleye.dev): From the makers of OwlEye Analytics.
+- [Shrinath Prabhu](https://shrinath.me): SuperFocus creator and frontend engineer.
+- [lowkey.tools](https://lowkey.tools): The tools collection that includes SuperFocus.
