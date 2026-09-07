@@ -10,6 +10,8 @@ export default async function Home() {
       <script
         type="application/ld+json"
         nonce={nonce}
+        // Browsers hide nonce attributes in the DOM after parsing the response.
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(structuredData()).replace(/</g, '\\u003c'),
         }}
