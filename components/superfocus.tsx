@@ -1613,7 +1613,30 @@ export default function SuperFocus() {
                   ? 'Storage needs your attention.'
                   : 'Opening your local workspace…'}
             </span>
-            <span>Small steps. Meaningful progress.</span>
+            <div className="maker-credit">
+              <p>
+                From the makers of{' '}
+                <a
+                  href="https://owleye.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  OwlEye Analytics
+                </a>
+                .
+              </p>
+              <p>
+                Built by{' '}
+                <a
+                  href="https://shrinath.me"
+                  target="_blank"
+                  rel="me author noopener noreferrer"
+                >
+                  Shrinath
+                </a>
+                .
+              </p>
+            </div>
           </footer>
         </main>
       </div>

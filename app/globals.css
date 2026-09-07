@@ -568,6 +568,8 @@ h2 {
 .page-footer {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 15px;
   margin: 23px 1px 0;
   font-size: 12px;
@@ -577,6 +579,21 @@ h2 {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+.maker-credit {
+  font-size: 12px;
+  line-height: 1.8;
+  text-align: right;
+}
+.maker-credit a {
+  color: #c8a8e9;
+  text-decoration: underline;
+  text-decoration-color: #6f587f;
+  text-underline-offset: 3px;
+}
+.maker-credit a:hover {
+  color: #e6c5ff;
+  text-decoration-color: currentColor;
 }
 @media (min-width: 1500px) {
   .main-content {
@@ -670,8 +687,11 @@ h2 {
   .panel {
     padding: 20px;
   }
-  .page-footer > span:last-child {
-    display: none;
+  .page-footer {
+    flex-direction: column;
+  }
+  .maker-credit {
+    text-align: left;
   }
   .section-title {
     align-items: flex-start;

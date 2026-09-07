@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 export const metadata: Metadata = {
+  authors: [{ name: 'Shrinath Prabhu', url: 'https://shrinath.me' }],
+  publisher: 'OwlEye Analytics',
   title: 'SuperFocus — A little structure. A lot more focus.',
   description:
     'Pomodoro sessions, sprint planning, goals and original ambient music. Private, local and available offline.',
