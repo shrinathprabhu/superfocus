@@ -1,0 +1,15 @@
+SuperFocus original ambient compositions
+
+Quiet orbit, First light, Deep current, Moon room, Still water, Paper lantern,
+Blue hour, Slow morning, Distant stars, Home stretch.
+
+These compositions and recordings were procedurally composed and synthesized
+for SuperFocus. They contain no third-party recordings or samples.
+
+To the extent any copyright or related rights exist, the project contributors
+dedicate these ten audio files and their compositions to the public domain
+under CC0 1.0 Universal. No attribution, account or subscription is required.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Source and reproducible synthesis: scripts/generate-audio.mjs.
+This dedication does not apply to user-imported audio.
