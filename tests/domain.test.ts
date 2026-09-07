@@ -112,6 +112,29 @@ void test('timestamp timer survives long background gaps and never goes negative
   assert.equal(remaining(t, 100001), 0);
   assert.equal(remaining({ ...t, endAt: null, remaining: 45 }, 9999999), 45);
 });
+for (const mode of ['focus', 'short', 'long'] as const) {
+  void test(`${mode} starts and resumes without gaining a second between clock ticks`, () => {
+    const timer = freshTimer(initialState().settings, mode);
+    const startedAt = 100000;
+    const running = {
+      ...timer,
+      endAt: startedAt + timer.remaining * 1000,
+    };
+    // Starting between 500 ms clock ticks must not round up to an extra second.
+    for (const staleBy of [1, 499, 5000]) {
+      assert.equal(remaining(running, startedAt - staleBy), timer.remaining);
+    }
+    assert.equal(remaining(running, startedAt), timer.remaining);
+    assert.equal(remaining(running, startedAt + 999), timer.remaining);
+    assert.equal(remaining(running, startedAt + 1000), timer.remaining - 1);
+
+    const resumed = { ...timer, remaining: 42, endAt: startedAt + 42000 };
+    assert.equal(remaining(resumed, startedAt - 499), 42);
+    assert.equal(remaining(resumed, startedAt + 1000), 41);
+    assert.equal(remaining(resumed, startedAt + 42000), 0);
+    assert.equal(remaining(resumed, startedAt + 90000), 0);
+  });
+}
 void test('session completes once, at its real end, without inventing unattended sessions', () => {
   const state = initialState('2026-09-07');
   state.timer = {

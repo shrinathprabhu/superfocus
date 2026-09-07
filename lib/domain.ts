@@ -171,9 +171,14 @@ export function pendingReview(tasks: Task[], today: string): Task[] {
   return tasks.filter((t) => isOpen(t) && t.plannedDate < today);
 }
 export function remaining(timer: TimerState, now = Date.now()): number {
+  // A new deadline can arrive before the display clock's next tick. Cap the
+  // countdown at its start/resume balance so a stale tick cannot add time.
   return timer.endAt === null
     ? timer.remaining
-    : Math.max(0, Math.ceil((timer.endAt - now) / 1000));
+    : Math.max(
+        0,
+        Math.min(timer.remaining, Math.ceil((timer.endAt - now) / 1000)),
+      );
 }
 export function shiftTask(task: Task, to: string): Task {
   const delta = dayDistance(task.plannedDate, to);
