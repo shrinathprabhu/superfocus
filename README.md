@@ -75,6 +75,8 @@ Mobile improvements include safe-area padding, single-column guide layouts, larg
 
 ## Validation
 
+Typography uses the locally bundled Geist Sans variable WOFF2 from Vercel's official `geist@1.7.2` package ([font information](https://vercel.com/font)). The font is preloaded, uses `font-display: swap`, and is included automatically in the offline cache. Its SIL Open Font License is preserved at `public/fonts/geist-OFL.txt`. No third-party font request or font package runtime is needed.
+
 The Node tests cover calendar/month-end boundaries, date shifting, daily review, status transitions, timer recovery and idempotence, backup rejection, IndexedDB persistence and concurrent mutations, and offline navigation/audio ranges. `fake-indexeddb` provides an isolated IndexedDB implementation for these tests. They do not pretend to verify browser-specific installation, permissions, autoplay or process suspension.
 
 Lint covers app-owned code. The generated UI catalog and its `use-mobile` helper are excluded rather than editing vendored components. React Compiler-specific lint is disabled because this project does not enable React Compiler; hooks and dependency rules remain enforced.
