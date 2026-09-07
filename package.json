@@ -6,13 +6,14 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "node --experimental-strip-types scripts/generate-discovery.mjs && vinext dev",
-    "build": "node --experimental-strip-types scripts/generate-discovery.mjs && vinext build && node scripts/build-sw.mjs",
+    "dev": "node --experimental-strip-types scripts/generate-http-config.mjs && node --experimental-strip-types scripts/generate-discovery.mjs && vinext dev",
+    "build": "node --experimental-strip-types scripts/generate-http-config.mjs && node --experimental-strip-types scripts/generate-discovery.mjs && vinext build && node scripts/build-sw.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts tests/*.test.mjs",
+    "check:http": "node --experimental-strip-types scripts/check-http.mjs",
     "generate:assets": "node scripts/generate-audio.mjs && node scripts/generate-icons.mjs"
   },
   "dependencies": {

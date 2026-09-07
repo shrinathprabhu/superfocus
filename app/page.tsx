@@ -1,18 +1,24 @@
 import SuperFocus from '@/components/superfocus';
 import ProductGuide from '@/components/product-guide';
 import { structuredData } from '@/lib/site-content';
-export default function Home() {
+import { headers } from 'next/headers';
+import { CSPProvider } from '@base-ui/react/csp-provider';
+export default async function Home() {
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <>
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(structuredData()).replace(/</g, '\\u003c'),
         }}
       />
-      <SuperFocus>
-        <ProductGuide />
-      </SuperFocus>
+      <CSPProvider nonce={nonce}>
+        <SuperFocus>
+          <ProductGuide />
+        </SuperFocus>
+      </CSPProvider>
     </>
   );
 }

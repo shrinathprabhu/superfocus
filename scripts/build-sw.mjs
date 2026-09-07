@@ -14,12 +14,16 @@ const files = walk(root).filter(
     !p.endsWith('/_headers'),
 );
 const hash = createHash('sha256');
+const template = readFileSync('scripts/sw-template.js', 'utf8');
+// A worker or response-policy change must get a new cache, even when assets match.
+hash.update(template);
+hash.update(readFileSync('public/_headers'));
+hash.update(readFileSync('lib/http-policy.ts'));
 for (const f of files.sort()) {
   hash.update(f);
   hash.update(readFileSync(f));
 }
 const assets = ['/', '/superfocus', ...files.map((p) => p.slice(root.length))];
-const template = readFileSync('scripts/sw-template.js', 'utf8');
 const result = template
   .replace(
     '__CACHE_NAME__',

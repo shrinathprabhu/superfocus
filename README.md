@@ -73,6 +73,29 @@ The current Sites URL is owner-private. Search engines cannot index an authentic
 
 Mobile improvements include safe-area padding, single-column guide layouts, larger touch controls and 16px form inputs. Idle clocks update once per minute, running clocks at the next displayed-second boundary, and both refresh immediately on visibility changes. Original alarm scheduling and elapsed-time recovery remain intact. Static fingerprinted assets receive long-lived cache headers; HTML and the service worker are not marked immutable.
 
+## Security headers and caching
+
+`lib/http-policy.ts` defines shared policies. `scripts/generate-http-config.mjs` runs before development/build and generates Cloudflare's `public/_headers` and Vercel's `vercel.json`. Both cover static responses. `proxy.ts` applies security headers to server-rendered pages, RSC responses and errors, because Cloudflare's `_headers` file does not cover Worker-generated responses.
+
+Every network-rendered document gets a cryptographically random script nonce; requests supplying server-owned nonce/CSP headers are rejected before rendering. The renderer, JSON-LD and Base UI's CSP provider receive the same nonce. Production blocks unapproved inline scripts, inline event handlers and eval. Local development permits eval and WebSockets for Vite. Inline styles remain allowed for component positioning, progress and slider values. Local audio blobs, fonts, workers, manifests, autoplay and screen wake lock remain allowed; camera, microphone, geolocation, payments and USB are disabled.
+
+Other headers enforce `nosniff`, same-origin framing/resource/opener policies, a restrictive referrer policy, and one-year HSTS. HSTS does not include other subdomains and is not submitted for preload. The framework identification header is disabled. No cross-origin isolation requirement is imposed.
+
+| Response | HTTP caching |
+| --- | --- |
+| HTML, RSC and server-rendered errors | Private, no-store; no shared CDN cache |
+| Fingerprinted JS/CSS and the versioned Geist font | One year, immutable |
+| Audio, icons and favicon with stable filenames | One day, then revalidate |
+| Service worker, manifest, sitemaps, robots and text guides | Revalidate on every request |
+
+HTTP caching and offline Cache Storage are separate. The PWA deliberately caches the public app shell with its matching CSP header and nonce, plus that build's assets; it does not cache workspace data or RSC payloads. Installation rejects redirected or unmarked sign-in/error HTML. Security-policy and worker-template changes generate a fresh cache version. Older app tabs keep a consistent version until they close. See [MDN Cache behavior](https://developer.mozilla.org/en-US/docs/Web/API/Cache).
+
+The deployed Sites preview runs on Cloudflare, where `_headers` and the server proxy are active. **`vercel.json` contains matching hosting rules, not a Vercel runtime adapter or a Vercel deployment.** This checkout still builds a Cloudflare Worker. Moving it to Vercel requires a compatible runtime adapter (Vinext documents Nitro's Vercel preset) or a separate supported build target, then deployment verification on that platform. No private-preview proxy rewrite, domain redirect, account-level WAF/rate-limit rule or DNS change is configured here. When integrating into the existing lowkey.tools origin, merge the relevant scoped rules and preserve that site's other apps and policies.
+
+After starting the production preview on port 4173, run `npm run check:http` (or append `-- https://your-accessible-host`). It verifies HTML/RSC/404 headers, unique matching script nonces including Base UI, rejection of supplied nonce/CSP headers, and every offline resource's security/cache headers. Hosted access gates can add or override headers; verify the final public origin when it is connected. Browser interaction testing has not been performed in this change.
+
+Configuration references: [Cloudflare static headers](https://developers.cloudflare.com/workers/static-assets/headers/), [Vercel header rules](https://vercel.com/docs/project-configuration/vercel-json#headers).
+
 ## Validation
 
 Typography uses the locally bundled Geist Sans variable WOFF2 from Vercel's official `geist@1.7.2` package ([font information](https://vercel.com/font)). The font is preloaded, uses `font-display: swap`, and is included automatically in the offline cache. Its SIL Open Font License is preserved at `public/fonts/geist-OFL.txt`. No third-party font request or font package runtime is needed.

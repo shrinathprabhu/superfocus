@@ -15,8 +15,10 @@ self.addEventListener('install', (event) => {
             );
             if (
               !response.ok ||
+              response.redirected ||
               (APP_PATHS.has(path) &&
-                !response.headers.get('content-type')?.includes('text/html'))
+                (!response.headers.get('content-type')?.includes('text/html') ||
+                  response.headers.get('x-superfocus-shell') !== '1'))
             )
               throw Error('Offline setup incomplete');
             await cache.put(path, response);
@@ -58,6 +60,7 @@ self.addEventListener('fetch', (event) => {
           if (
             response.ok &&
             !response.redirected &&
+            response.headers.get('x-superfocus-shell') === '1' &&
             response.headers.get('content-type')?.includes('text/html')
           )
             await cache.put(url.pathname, response.clone());
