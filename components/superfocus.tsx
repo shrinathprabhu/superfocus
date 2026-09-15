@@ -1660,6 +1660,17 @@ export default function SuperFocus({
                 </a>
                 .
               </p>
+              <p>
+                <a
+                  className="inline-flex items-center gap-1"
+                  href={site.repository}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Source on GitHub
+                  <ArrowUpRight size={12} aria-hidden="true" />
+                </a>
+              </p>
             </div>
           </footer>
         </main>

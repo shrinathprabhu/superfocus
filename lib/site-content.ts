@@ -5,6 +5,7 @@ export const site = {
   description:
     'A free Pomodoro timer with to-do lists, sprint planning, goals and 10 focus music tracks. Install the offline PWA; your tasks stay on your device.',
   canonical: 'https://superfocus.lowkey.tools/',
+  repository: 'https://github.com/shrinathprabhu/superfocus',
   socialImage: {
     url: '/og/superfocus-v2.png',
     width: 1200,
