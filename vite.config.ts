@@ -1,61 +1,81 @@
-import { sites } from '@openai/sites-vite-plugin';
-import tailwindcss from '@tailwindcss/postcss';
+import tailwindcss from '@tailwindcss/vite';
+import { nitro } from 'nitro/vite';
+import type { NitroConfig } from 'nitro/types';
 import vinext from 'vinext';
 import { defineConfig } from 'vite';
-import hostingConfig from './.openai/hosting.json' with { type: 'json' };
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { hostingRules } from './lib/http-policy.ts';
+import { buildServiceWorker } from './scripts/build-sw.mjs';
+import cloudflareConfig from './wrangler.json' with { type: 'json' };
 
-const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
-  '00000000-0000-4000-8000-000000000000';
-
-const { d1, r2 } = hostingConfig;
-
-// macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
-const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === 'seatbelt';
-
-const localBindingConfig = {
-  main: 'vinext/server/fetch-handler',
-  compatibility_flags: ['nodejs_compat'],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: 'site-creator-d1',
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: 'site-creator-r2',
-        },
-      ]
-    : [],
-};
-
-export default defineConfig(async () => {
-  // Keep Wrangler and Miniflare state project-local. These are non-secret tool
-  // settings; application environment belongs in ignored `.env*` files.
-  process.env.WRANGLER_WRITE_LOGS ??= 'false';
-  process.env.WRANGLER_LOG_PATH ??= '.wrangler/logs';
-  process.env.MINIFLARE_REGISTRY_PATH ??= '.wrangler/registry';
-
-  // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import('@cloudflare/vite-plugin');
-
+export default defineConfig(({ command }) => {
+  let publicOutput: string;
+  const preset =
+    process.env.NITRO_PRESET ??
+    (command === 'build' ? 'cloudflare-module' : 'node');
   return {
-    css: { postcss: { plugins: [tailwindcss()] } },
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      port: 4317,
+      strictPort: true,
+      ...(process.env.CODEX_SANDBOX === 'seatbelt'
+        ? { watch: { useFsEvents: false, usePolling: true } }
+        : {}),
+    },
     plugins: [
+      tailwindcss(),
       vinext(),
-      sites(),
-      cloudflare({
-        viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
-        config: localBindingConfig,
+      nitro({
+        preset,
+        ...(preset === 'cloudflare-module'
+          ? {
+              output: {
+                dir: 'dist',
+                serverDir: 'dist/server',
+                publicDir: 'dist/client',
+              },
+            }
+          : {}),
+        compatibilityDate:
+          cloudflareConfig.compatibility_date as NitroConfig['compatibilityDate'],
+        cloudflare: {
+          nodeCompat: true,
+          // The committed wrangler.json is the Workers configuration for both
+          // dashboard builds and CLI commands; do not redirect to a generated one.
+          deployConfig: false,
+        },
+        plugins: ['./server/plugins/http-errors.ts'],
+        routeRules: Object.fromEntries(
+          hostingRules.map(({ path, headers }) => [
+            path,
+            {
+              headers: Object.fromEntries(
+                Object.entries(headers).map(([key, value]) => [
+                  key.toLowerCase(),
+                  value,
+                ]),
+              ),
+            },
+          ]),
+        ),
       }),
+      {
+        name: 'superfocus-offline-worker',
+        apply: 'build',
+        applyToEnvironment: (environment) => environment.name === 'nitro',
+        configResolved(config) {
+          publicOutput = config.environments.client.build.outDir;
+        },
+        // Nitro has copied the final client assets at this point. Generate the
+        // worker before its server bundle records public-file metadata/ETags.
+        buildStart() {
+          if (preset === 'cloudflare-module') {
+            // The compiled server already contains the client manifest.
+            rmSync(join(publicOutput, '.vite/manifest.json'), { force: true });
+          }
+          buildServiceWorker(publicOutput);
+        },
+      },
     ],
   };
 });

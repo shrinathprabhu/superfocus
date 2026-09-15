@@ -1,5 +1,5 @@
 /* oxlint-disable next/no-html-link-for-pages -- Resource links open static text/XML files; they must not use the app router. */
-import { faqs, quickStart, site } from '@/lib/site-content';
+import { faqs, quickStart, relatedTools, site } from '@/lib/site-content';
 
 // Server-rendered public content, passed as a slot into the local workspace.
 export default function ProductGuide() {
@@ -44,32 +44,56 @@ export default function ProductGuide() {
         aria-labelledby="makers-title"
       >
         <div>
-          <span className="eyebrow">INDEPENDENTLY BUILT</span>
-          <h3 id="makers-title">From the people behind OwlEye.</h3>
+          <span className="eyebrow">SMALL TOOL. A LITTLE MORE HEADSPACE.</span>
+          <h3 id="makers-title">The people behind your quiet corner.</h3>
           <p>
-            SuperFocus is part of{' '}
-            <a href="https://lowkey.tools">lowkey.tools</a>, from the makers of{' '}
-            <a href={site.publisher.url}>OwlEye Analytics</a>. Designed and
-            built by{' '}
+            Made by{' '}
             <a href={site.creator.url} rel="author">
               Shrinath Prabhu
             </a>
-            .
+            , from the makers of{' '}
+            <a href={site.publisher.url}>OwlEye Analytics</a>. SuperFocus is the
+            place to slow down in the{' '}
+            <a href="https://lowkey.tools">lowkey.tools</a> collection.
           </p>
         </div>
         <div className="maker-destinations">
-          <a href={site.publisher.url}>
-            Explore OwlEye Analytics <span aria-hidden="true">↗</span>
+          <a
+            href={site.creatorSocial}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Follow @shrinath_prabhu <span aria-hidden="true">↗</span>
           </a>
-          <a href={site.creator.url} rel="author">
-            Meet Shrinath Prabhu <span aria-hidden="true">↗</span>
+          <a
+            href="https://lowkey.tools"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Find your next lowkey tool <span aria-hidden="true">↗</span>
           </a>
         </div>
       </section>
+      {relatedTools.map((tool) => (
+        <section
+          className="companion-tool"
+          key={tool.name}
+          aria-labelledby="companion-title"
+        >
+          <div>
+            <span className="eyebrow">BEFORE YOU LOSE THAT THOUGHT</span>
+            <h3 id="companion-title">{tool.prompt}</h3>
+            <p>{tool.description}</p>
+          </div>
+          <a href={tool.url} target="_blank" rel="noopener noreferrer">
+            Open {tool.name} <span aria-hidden="true">↗</span>
+          </a>
+        </section>
+      ))}
       <p className="guide-resources">
-        <a href="/superfocus/index.md">Plain-text app guide</a>
-        <a href="/superfocus/llms.txt">llms.txt</a>
-        <a href="/superfocus/sitemap.xml">Sitemap</a>
+        <a href="/index.md">Plain-text app guide</a>
+        <a href="/llms.txt">llms.txt</a>
+        <a href="/sitemap.xml">Sitemap</a>
         <a href="/audio/LICENSE.txt">Music license</a>
       </p>
     </aside>

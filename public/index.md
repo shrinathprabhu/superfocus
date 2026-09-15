@@ -2,7 +2,7 @@
 
 > A free Pomodoro timer with to-do lists, sprint planning, goals and 10 focus music tracks. Install the offline PWA; your tasks stay on your device.
 
-Canonical: https://lowkey.tools/superfocus
+Canonical: https://superfocus.lowkey.tools/
 
 ## Quick start
 1. Add a task, choose a planned date, and optionally set a start time or deadline.
@@ -43,4 +43,7 @@ Yes. Sound alerts are enabled by default, with a test button in Settings. You ca
 The ten built-in ambient compositions are original and released under CC0. You can repeat a track, shuffle randomly, or upload audio files from your device, up to 30 MB per file. Uploaded files stay in your browser. Spotify, Apple Music and YouTube Music connections are not included.
 
 ## Makers
-Part of [lowkey.tools](https://lowkey.tools), from the makers of [OwlEye Analytics](https://owleye.dev). Designed and built by [Shrinath Prabhu](https://shrinath.me).
+Part of [lowkey.tools](https://lowkey.tools), from the makers of [OwlEye Analytics](https://owleye.dev). Designed and built by [Shrinath Prabhu](https://shrinath.me). [Follow @shrinath_prabhu on X](https://x.com/shrinath_prabhu).
+
+## A little less on your mind
+- [SuperBrain](https://lowkey.tools/superbrain): Park the idea in a private notebook, then get back to the task at hand.

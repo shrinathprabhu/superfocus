@@ -44,7 +44,7 @@ export function proxy(request: NextRequest) {
   for (const [key, value] of Object.entries(asset ?? documentCacheHeaders))
     response.headers.set(key, value);
   if (!asset) response.headers.set('Content-Security-Policy', csp);
-  if (['/', '/superfocus', '/superfocus/'].includes(request.nextUrl.pathname)) {
+  if (request.nextUrl.pathname === '/') {
     response.headers.set('X-SuperFocus-Shell', '1');
   }
   return response;

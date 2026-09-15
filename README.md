@@ -1,25 +1,28 @@
 # SuperFocus
 
-A local-first Pomodoro and sprint planner with original ambient music. Built with React, TypeScript, Vinext/Vite and IndexedDB. No task-data backend, accounts, analytics, API keys or streaming integrations.
+A local-first Pomodoro and sprint planner with original ambient music. Built with React, TypeScript, Vinext/Vite, Nitro and IndexedDB. Production target: `https://superfocus.lowkey.tools/`. No task-data backend, accounts, analytics, API keys or streaming integrations.
 
 ## Run
 
+Use Node.js 24 (`.node-version` and `package.json` specify the supported build version).
+
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
-Open the local address printed by the server. Both `/` and `/superfocus` render the app. Service-worker registration is intentionally disabled during development, so stale offline files do not interfere with edits.
+Open `http://localhost:4317/`. The app, manifest, service worker and all assets are served from the domain root. Service-worker registration is intentionally disabled during development, so stale offline files do not interfere with edits.
 
 ```sh
 npm run typecheck
 npm run lint
 npm test
 npm run build
-npm start
+npm run build:preview
+PORT=4173 npm start
 ```
 
-`build` creates the Worker app and generates `dist/client/sw.js` from the final asset hashes. Use the production preview printed by `npm start` to exercise installation and offline mode. Serve the Worker entry and its `dist/client` static assets together over HTTPS. Localhost is also a secure context for development.
+`npm run build` produces a Cloudflare Worker in `dist/server` and public assets in `dist/client`. `npm run build:cloudflare` is an alias for that build. `npm run build:preview` creates the same app with Nitro's Node preset in `.output`; `PORT=4173 npm start` serves it for local production verification. All targets generate the service worker from the final client assets before Nitro records their metadata. HTTPS is required in production; localhost is a secure context for testing.
 
 ## Included behavior
 
@@ -45,15 +48,59 @@ There is deliberately no fake service-worker timer, perpetual silent audio, or c
 
 References: [MDN background throttling](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API), [Screen Wake Lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API), [WebKit Home Screen push](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
 
-## Domains and canonical URL
+## Production domain and canonical URL
 
-Every app route declares `https://lowkey.tools/superfocus` as its canonical URL, including when served at `https://superfocus.lowkey.tools` or the private Sites preview. This is an SEO declaration, not a redirect and not data synchronization.
+The only production app URL is `https://superfocus.lowkey.tools/`. Canonical and Open Graph URLs, JSON-LD, sitemap, discovery resources and PWA launch URLs use this root. There is no base path or main-domain proxy integration. The framework uses `trailingSlash: true` to keep rendered root metadata consistent with the sitemap and guides. The former path route and its scoped discovery files have been removed and return 404. Vinext may first normalize a trailing slash on a missing URL.
 
-This repository is a standalone app; it does not contain the existing `lowkey.tools` site or its DNS configuration. To expose both requested URLs, map `superfocus.lowkey.tools` to this deployment and route `/superfocus` on the main domain to this app. The main-domain integration must also route its static assets, manifest, icons and worker. Do not map the main domain wholesale or overwrite its existing service worker.
+`wrangler.json` declares `superfocus.lowkey.tools` as a Custom Domain. A production `wrangler deploy` applies that declaration; local builds and dry runs do not attach the domain. The old private Sites preview remains a separate deployment, and its metadata is retained only as historical project context.
 
-For a shared-origin integration, adjust manifest start URL/scope and worker registration scope to `/superfocus/`, serve the app at the trailing-slash path, and namespace assets under that path. A reverse proxy must preserve asset MIME types, range requests, redirects and worker scope headers. These deployment-specific settings depend on the current main-site host. The standalone configuration uses root assets and a root worker scope.
+The `proxy.ts` filename is Vinext's request middleware convention. It creates security headers and CSP nonces; it does not proxy or rewrite URLs. Nitro handles static files and server responses through one shared policy, and emits Workers static-asset header rules.
 
-IndexedDB is origin-specific. `lowkey.tools` and `superfocus.lowkey.tools` necessarily have separate stores, even with the same canonical URL. Use a single preferred domain for daily use, or export/restore to move data. Cross-origin synchronization would require a separate explicit design.
+IndexedDB is origin-specific. If moving an existing workspace from another domain, export its backup in Settings and restore it on the new domain; personal audio needs to be imported again. The database name and schema remain unchanged.
+
+## Cloudflare Workers deployment
+
+Create a **Worker** connected to this repository and use these Workers Builds settings:
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Non-production branch deploy command | `npx wrangler versions upload` |
+| Root directory | Repository root |
+| Node.js | `24`, selected by `.node-version`; `NODE_VERSION=24` can also be set in the build environment |
+
+`wrangler.json` defines the Worker name `superfocus`, entrypoint `dist/server/index.mjs`, static assets in `dist/client`, compatibility date and `nodejs_compat`. Update `name` if your Worker has a different name. Nitro reads the same compatibility date and builds with the `cloudflare-module` preset. The app needs no API keys, database bindings or external storage; `ASSETS` only serves the bundled public files.
+
+Static files use Workers Static Assets and the generated `dist/client/_headers`. The root HTML and RSC render in the Worker with a fresh CSP nonce; missing routes and assets return uncached 404s. Asset HTML normalization and SPA fallbacks are disabled, leaving URL behavior to the app. Only the client directory is uploaded as public assets, keeping server code and build records private. The service worker still caches the root and client assets, including all ten music tracks.
+
+Build and verify locally with the pinned Wrangler CLI:
+
+```sh
+npm ci
+npm run build:cloudflare
+npm run preview:cloudflare
+# In another terminal, while the preview is running on http://localhost:4319:
+npm run check:cloudflare
+```
+
+`check:cloudflare` validates the emitted Worker, asset configuration and shared headers, then checks actual HTTP responses for CSP nonces, canonical/OG metadata, HTML/RSC/errors, offline resources and audio responses to range requests. For a deployed copy of the same build, pass its URL: `npm run check:cloudflare -- https://superfocus.lowkey.tools`.
+
+The local Workers asset runtime returned complete HTTP 200 audio responses during verification. The check validates the bytes for either a full 200 or partial 206 response. SuperFocus's service worker supplies cached audio ranges, including offline; the existing service-worker tests cover this behavior.
+
+For a manual deployment, authenticate with `npx wrangler login`, then run `npm run deploy:cloudflare`. That command builds and deploys. In Workers Builds, use the separate build and deploy commands from the table to avoid rebuilding twice. To validate the upload without publishing, run `npx wrangler deploy --dry-run` after building.
+
+The custom domain is declared directly in `wrangler.json`:
+
+```json
+"routes": [{ "pattern": "superfocus.lowkey.tools", "custom_domain": true }]
+```
+
+The route uses a hostname without a protocol, path, wildcard or trailing slash. The canonical page URL remains `https://superfocus.lowkey.tools/`. Wrangler applies the Custom Domain when deploying to the account that owns the active `lowkey.tools` zone; Cloudflare manages the associated DNS and certificate. If the hostname still has a CNAME from the old host, resolve that conflicting record before deployment. See [Cloudflare Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+
+`workers_dev` and `preview_urls` stay enabled, matching Billbook's deployment setup. Keeping the same HTTPS origin preserves browser storage; preview domains have separate storage. Local builds and `--dry-run` only validate the package and configuration.
+
+References: [Workers Builds configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/), [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/), [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/), [Nitro on Workers](https://nitro.build/deploy/providers/cloudflare).
 
 ## Data and audio
 
@@ -65,9 +112,11 @@ The ten bundled tracks are synthesized entirely from original oscillators and no
 
 Metadata includes a descriptive title, canonical URL, robots directives, Open Graph and Twitter summaries, author/publisher identity and PWA metadata. The server-rendered product guide, quick start and FAQ are visible without JavaScript. `lib/site-content.ts` is the common source for the visible answers, JSON-LD graph and Markdown guide. The graph describes the WebApplication, WebPage, FAQPage, creator and publisher; there are no invented ratings, reviews or claims of rich-result eligibility.
 
-`scripts/generate-discovery.mjs` runs before development and production builds. It generates `/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/superfocus/sitemap.xml`, `/superfocus/llms.txt` and `/superfocus/index.md`. Sitemaps include only the canonical app URL, not duplicate entry points, anchors or client-only views. The path-scoped discovery files can be integrated without replacing other lowkey.tools discovery content. The robots sitemap directive names the canonical host's path-scoped sitemap.
+`scripts/generate-discovery.mjs` runs before development and production builds. It generates `/robots.txt`, `/sitemap.xml`, `/llms.txt` and `/index.md`. The sitemap contains only `https://superfocus.lowkey.tools/`; the robots directive points to `https://superfocus.lowkey.tools/sitemap.xml`.
 
-The current Sites URL is owner-private. Search engines cannot index an authenticated preview. Before public launch, route the canonical app and its discovery files on lowkey.tools, complete the shared-origin asset/worker setup described above, and merge the SuperFocus entry into the existing domain sitemap and llms.txt. Preserve the main site's root robots.txt, add the SuperFocus sitemap declaration, and ensure its rules allow the app and assets. Cross-host sitemap submission requires ownership verification. Verify the public canonical URL in Google Search Console and Bing Webmaster Tools and submit its sitemap using the domain owner's accounts. Those accounts and DNS configuration are outside this checkout.
+The 1200×630 PNG at `/og/superfocus-v2.png` is referenced with an absolute production URL by Open Graph and X large-image metadata, with dimensions and alt text. The card uses only “by @shrinath_prabhu” as its footer credit. Its type uses the same bundled Geist font, converted to vector outlines in `scripts/social-card.svg`. `npm run generate:og` renders that SVG to the committed PNG, without a network request. To change the card copy/design, install Python `fonttools` and `brotli`, run `python3 scripts/generate-social-image.py`, then `npm run generate:og`. Ordinary builds use the committed PNG and require no Python or image service. Use a new versioned filename if replacing a published card.
+
+Once the production domain is publicly accessible, verify its rendered canonical, social image, crawler files and HTTP headers. Submit the root sitemap through the owner's Google Search Console and Bing Webmaster Tools accounts. The authenticated private preview is not an indexable production URL.
 
 `llms.txt` is a community proposal, not an indexing switch. Search and AI answer inclusion are not guaranteed. The implementation follows [Google's AI features guidance](https://developers.google.com/search/docs/appearance/ai-features) and the [llms.txt proposal](https://llmstxt.org/). OwlEye and Shrinath links are visible contextual credits in navigation, the maker section and footer; no hidden links, keyword stuffing or fabricated endorsements are used.
 
@@ -75,7 +124,7 @@ Mobile improvements include safe-area padding, single-column guide layouts, larg
 
 ## Security headers and caching
 
-`lib/http-policy.ts` defines shared policies. `scripts/generate-http-config.mjs` runs before development/build and generates Cloudflare's `public/_headers` and Vercel's `vercel.json`. Both cover static responses. `proxy.ts` applies security headers to server-rendered pages, RSC responses and errors, because Cloudflare's `_headers` file does not cover Worker-generated responses.
+`lib/http-policy.ts` defines shared policies. `vite.config.ts` passes those policies to Nitro for runtime handling and Cloudflare Workers' generated `dist/client/_headers`. `proxy.ts` additionally applies per-request security headers to server-rendered pages, RSC responses and errors. Workers `_headers` covers static assets; server responses set their own headers because [Workers does not apply that file to responses generated by Worker code](https://developers.cloudflare.com/workers/static-assets/headers/). Edit the shared policy rather than generated build files.
 
 Every network-rendered document gets a cryptographically random script nonce; requests supplying server-owned nonce/CSP headers are rejected before rendering. The renderer, JSON-LD and Base UI's CSP provider receive the same nonce. Production blocks unapproved inline scripts, inline event handlers and eval. Local development permits eval and WebSockets for Vite. Inline styles remain allowed for component positioning, progress and slider values. Local audio blobs, fonts, workers, manifests, autoplay and screen wake lock remain allowed; camera, microphone, geolocation, payments and USB are disabled.
 
@@ -90,13 +139,9 @@ Other headers enforce `nosniff`, same-origin framing/resource/opener policies, a
 
 HTTP caching and offline Cache Storage are separate. The PWA deliberately caches the public app shell with its matching CSP header and nonce, plus that build's assets; it does not cache workspace data or RSC payloads. Installation rejects redirected or unmarked sign-in/error HTML. Security-policy and worker-template changes generate a fresh cache version. Older app tabs keep a consistent version until they close. See [MDN Cache behavior](https://developer.mozilla.org/en-US/docs/Web/API/Cache).
 
-The deployed Sites preview runs on Cloudflare, where `_headers` and the server proxy are active. **`vercel.json` contains matching hosting rules, not a Vercel runtime adapter or a Vercel deployment.** This checkout still builds a Cloudflare Worker. Moving it to Vercel requires a compatible runtime adapter (Vinext documents Nitro's Vercel preset) or a separate supported build target, then deployment verification on that platform. No private-preview proxy rewrite, domain redirect, account-level WAF/rate-limit rule or DNS change is configured here. When integrating into the existing lowkey.tools origin, merge the relevant scoped rules and preserve that site's other apps and policies.
+Run `npm run typecheck`, `npm test` and `npm run build` before deployment. Start `npm run preview:cloudflare`, then run `npm run check:cloudflare` to validate the generated custom-domain declaration, asset rules and actual Worker responses. This checks fresh nonces, rejection of supplied CSP/nonce headers, root HTML/RSC/404 responses, removed-path 404s, OG metadata, and every precached resource's security/cache headers. For the same build after deployment, use `npm run check:cloudflare -- https://superfocus.lowkey.tools`. A successful dry run or local HTTP check does not verify production DNS or certificate readiness.
 
-After starting the production preview on port 4173, run `npm run check:http` (or append `-- https://your-accessible-host`). It verifies HTML/RSC/404 headers, unique matching script nonces including Base UI, rejection of supplied nonce/CSP headers, and every offline resource's security/cache headers. Hosted access gates can add or override headers; verify the final public origin when it is connected. Browser interaction testing has not been performed in this change.
-
-Configuration references: [Cloudflare static headers](https://developers.cloudflare.com/workers/static-assets/headers/), [Vercel header rules](https://vercel.com/docs/project-configuration/vercel-json#headers).
-
-## Validation
+The Node preview remains available through `npm run build:preview`, `PORT=4173 npm start` and `npm run check:http` for local server troubleshooting.
 
 Typography uses the locally bundled Geist Sans variable WOFF2 from Vercel's official `geist@1.7.2` package ([font information](https://vercel.com/font)). The font is preloaded, uses `font-display: swap`, and is included automatically in the offline cache. Its SIL Open Font License is preserved at `public/fonts/geist-OFL.txt`. No third-party font request or font package runtime is needed.
 

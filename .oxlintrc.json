@@ -31,7 +31,9 @@
     "coverage/**",
     "next-env.d.ts",
     "components/ui/**",
-    "hooks/use-mobile.ts"
+    "hooks/use-mobile.ts",
+    ".output/**",
+    ".nitro/**"
   ],
   "rules": {
     "no-array-constructor": "error",

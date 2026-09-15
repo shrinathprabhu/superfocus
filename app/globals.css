@@ -2055,3 +2055,43 @@ h2 {
     height: 24px;
   }
 }
+
+.companion-tool {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid #37323f;
+  border-radius: 12px;
+  background: #1b1922;
+}
+.companion-tool .eyebrow {
+  display: block;
+  margin-bottom: 0.65rem;
+}
+.companion-tool h3 {
+  margin-bottom: 0.6rem;
+}
+.companion-tool > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid #685078;
+  border-radius: 8px;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+.companion-tool > a:hover,
+.maker-destinations a:hover {
+  background: #30243e;
+}
+@media (max-width: 640px) {
+  .companion-tool {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { site } from '@/lib/site-content';
 import './globals.css';
 export const metadata: Metadata = {
-  metadataBase: new URL('https://lowkey.tools'),
+  metadataBase: new URL(site.canonical),
   applicationName: site.name,
   authors: [{ name: 'Shrinath Prabhu', url: 'https://shrinath.me' }],
   publisher: 'OwlEye Analytics',
@@ -23,15 +23,29 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: site.canonical,
-    siteName: 'lowkey.tools',
+    siteName: site.name,
     title: site.title,
     description: site.description,
     locale: 'en_US',
+    images: [
+      {
+        ...site.socialImage,
+        url: new URL(site.socialImage.url, site.canonical).href,
+        type: 'image/png',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
+    creator: '@shrinath_prabhu',
     title: site.title,
     description: site.description,
+    images: [
+      {
+        url: new URL(site.socialImage.url, site.canonical).href,
+        alt: site.socialImage.alt,
+      },
+    ],
   },
   category: 'productivity',
   manifest: '/manifest.webmanifest',
@@ -62,10 +76,10 @@ export default function RootLayout({
           type="font/woff2"
           crossOrigin="anonymous"
         />
-        <link rel="describedby" href="/superfocus/llms.txt" type="text/plain" />
+        <link rel="describedby" href="/llms.txt" type="text/plain" />
         <link
           rel="alternate"
-          href="/superfocus/index.md"
+          href="/index.md"
           type="text/markdown"
           title="SuperFocus app guide"
         />

@@ -186,7 +186,7 @@ export function useSuperfocus() {
                   body,
                   icon: '/icons/icon-192.png',
                   tag: finished.id,
-                  data: { url: '/superfocus' },
+                  data: { url: '/' },
                 });
               else new Notification(title, { body, tag: finished.id });
             } catch {

@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "superfocus",
+  "main": "./dist/server/index.mjs",
+  "send_metrics": false,
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [{ "pattern": "superfocus.lowkey.tools", "custom_domain": true }],
+  "compatibility_date": "2026-09-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "no_bundle": true,
+  "rules": [{ "type": "ESModule", "globs": ["**/*.mjs", "**/*.js"] }],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none"
+  }
+}

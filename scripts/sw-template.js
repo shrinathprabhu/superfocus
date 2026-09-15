@@ -1,7 +1,7 @@
 /* SuperFocus offline worker. The asset list and version are injected at build time. */
 const CACHE = '__CACHE_NAME__';
 const ASSETS = __ASSET_LIST__;
-const APP_PATHS = new Set(['/', '/superfocus', '/superfocus/']);
+const APP_PATHS = new Set(['/']);
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -51,9 +51,7 @@ self.addEventListener('fetch', (event) => {
         // Keep the shell and its hashed chunks on the same version until the
         // waiting worker activates. Network-first HTML could reference newer
         // chunks that this active worker has not cached for offline use.
-        const cached =
-          (await cache.match(url.pathname)) ||
-          (await cache.match('/superfocus'));
+        const cached = await cache.match('/');
         if (cached) return cached;
         try {
           const response = await fetch(request);
@@ -66,11 +64,7 @@ self.addEventListener('fetch', (event) => {
             await cache.put(url.pathname, response.clone());
           return response;
         } catch {
-          return (
-            (await cache.match(url.pathname)) ||
-            (await cache.match('/superfocus')) ||
-            Response.error()
-          );
+          return (await cache.match('/')) || Response.error();
         }
       })(),
     );
@@ -137,7 +131,7 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      await self.clients.openWindow('/superfocus');
+      await self.clients.openWindow('/');
     })(),
   );
 });

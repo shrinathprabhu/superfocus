@@ -1,9 +1,9 @@
 {
-  "id": "/superfocus",
+  "id": "/",
   "name": "SuperFocus",
   "short_name": "SuperFocus",
   "description": "Free Pomodoro timer, tasks, sprint planning, goals and 10 offline focus music tracks. Your workspace stays on your device.",
-  "start_url": "/superfocus",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#121218",

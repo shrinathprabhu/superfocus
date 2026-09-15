@@ -4,10 +4,28 @@ export const site = {
   title: 'SuperFocus — Free Pomodoro Timer, Tasks & Focus Music',
   description:
     'A free Pomodoro timer with to-do lists, sprint planning, goals and 10 focus music tracks. Install the offline PWA; your tasks stay on your device.',
-  canonical: 'https://lowkey.tools/superfocus',
+  canonical: 'https://superfocus.lowkey.tools/',
+  socialImage: {
+    url: '/og/superfocus-v2.png',
+    width: 1200,
+    height: 630,
+    alt: 'SuperFocus: One thing at a time. Pomodoro, tasks and quiet music, with a 25-minute focus timer.',
+  },
   creator: { name: 'Shrinath Prabhu', url: 'https://shrinath.me' },
+  creatorSocial: 'https://x.com/shrinath_prabhu',
   publisher: { name: 'OwlEye Analytics', url: 'https://owleye.dev' },
 } as const;
+
+// One companion from the lowkey.tools collection, relevant to a focus session.
+export const relatedTools = [
+  {
+    name: 'SuperBrain',
+    url: 'https://lowkey.tools/superbrain',
+    prompt: 'A thought for later?',
+    description:
+      'Park the idea in a private notebook, then get back to the task at hand.',
+  },
+] as const;
 
 export const quickStart = [
   'Add a task, choose a planned date, and optionally set a start time or deadline.',
@@ -73,7 +91,12 @@ export function structuredData() {
   return {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'Person', '@id': personId, ...site.creator },
+      {
+        '@type': 'Person',
+        '@id': personId,
+        ...site.creator,
+        sameAs: [site.creatorSocial],
+      },
       {
         '@type': 'Organization',
         '@id': organizationId,
@@ -86,6 +109,7 @@ export function structuredData() {
         name: site.name,
         url: site.canonical,
         description: site.description,
+        image: new URL(site.socialImage.url, site.canonical).href,
         applicationCategory: 'ProductivityApplication',
         operatingSystem: 'Any operating system with a modern web browser',
         browserRequirements:

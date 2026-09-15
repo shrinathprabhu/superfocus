@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { site, faqs, structuredData } from '../lib/site-content.ts';
 import { nextClockDelay } from '../lib/clock.ts';
 
@@ -10,12 +10,16 @@ void test('discovery files expose only the canonical page and consistent public 
     [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((x) => x[1]),
     [site.canonical],
   );
-  assert.equal(sitemap, readFileSync('public/superfocus/sitemap.xml', 'utf8'));
+  assert.equal(site.canonical, 'https://superfocus.lowkey.tools/');
+  assert.ok(!existsSync('app/superfocus/page.tsx'));
+  assert.ok(!existsSync('public/superfocus/sitemap.xml'));
+  assert.ok(!existsSync('public/superfocus/llms.txt'));
+  assert.ok(!existsSync('public/superfocus/index.md'));
   assert.match(
     readFileSync('public/robots.txt', 'utf8'),
-    /Sitemap: https:\/\/lowkey\.tools\/superfocus\/sitemap\.xml/,
+    /Sitemap: https:\/\/superfocus\.lowkey\.tools\/sitemap\.xml/,
   );
-  const markdown = readFileSync('public/superfocus/index.md', 'utf8');
+  const markdown = readFileSync('public/index.md', 'utf8');
   for (const { question, answer } of faqs) {
     assert.ok(markdown.includes(question));
     assert.ok(markdown.includes(answer));
@@ -57,8 +61,9 @@ void test('offline music retains ten small tracks and manifest icons exist', () 
   const manifest = JSON.parse(
     readFileSync('public/manifest.webmanifest', 'utf8'),
   );
-  assert.equal(manifest.id, '/superfocus');
-  assert.equal(manifest.start_url, '/superfocus');
+  assert.equal(manifest.id, '/');
+  assert.equal(manifest.start_url, '/');
+  assert.equal(manifest.scope, '/');
   for (const icon of manifest.icons)
     assert.ok(statSync(`public${icon.src}`).size > 0);
 });
@@ -70,4 +75,12 @@ void test('adaptive clock meets second boundaries and does not busy-loop after e
   assert.equal(nextClockDelay(1500000, 1500000), 60000);
   assert.equal(nextClockDelay(1500000, 1500001), 59999);
   assert.equal(nextClockDelay(null, 60300), 59700);
+});
+
+void test('the shared social card is a 1200 by 630 PNG', () => {
+  const png = readFileSync(`public${site.socialImage.url}`);
+  assert.equal(png.subarray(1, 4).toString(), 'PNG');
+  assert.equal(png.readUInt32BE(16), site.socialImage.width);
+  assert.equal(png.readUInt32BE(20), site.socialImage.height);
+  assert.ok(png.length < 250_000);
 });

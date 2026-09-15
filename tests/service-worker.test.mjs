@@ -48,16 +48,11 @@ function worker(
       .replace('__CACHE_NAME__', 'superfocus-offline-test')
       .replace(
         '__ASSET_LIST__',
-        JSON.stringify([
-          '/',
-          '/superfocus',
-          '/audio/quiet-orbit.mp3',
-          '/assets/app.js',
-        ]),
+        JSON.stringify(['/', '/audio/quiet-orbit.mp3', '/assets/app.js']),
       ),
     context,
   );
-  return { handlers, cache, puts };
+  return { handlers, cache, puts, clients: context.self.clients };
 }
 async function fetchWorker(w, request) {
   let response;
@@ -67,14 +62,14 @@ async function fetchWorker(w, request) {
 void test('offline navigation recovers cached app shell', async () => {
   const w = worker();
   w.cache.set(
-    '/superfocus',
+    '/',
     new Response('<html>SuperFocus</html>', {
       headers: { 'content-type': 'text/html' },
     }),
   );
   const r = await fetchWorker(w, {
     method: 'GET',
-    url: 'https://focus.test/superfocus/',
+    url: 'https://focus.test/',
     mode: 'navigate',
     headers: new Headers(),
   });
@@ -85,7 +80,7 @@ void test('offline shell retains its matching CSP and nonce even with HTTP no-st
   const w = worker();
   const csp = "script-src 'self' 'nonce-offline-shell'";
   w.cache.set(
-    '/superfocus',
+    '/',
     new Response('<script nonce="offline-shell">ready()</script>', {
       headers: {
         'content-type': 'text/html',
@@ -96,7 +91,7 @@ void test('offline shell retains its matching CSP and nonce even with HTTP no-st
   );
   const response = await fetchWorker(w, {
     method: 'GET',
-    url: 'https://focus.test/superfocus',
+    url: 'https://focus.test/',
     mode: 'navigate',
     headers: new Headers(),
   });
@@ -123,7 +118,6 @@ void test('offline install rejects sign-in HTML and redirected app responses', a
       },
     });
     await assert.rejects(installation, /Offline setup incomplete/);
-    assert.ok(!w.puts.includes('/superfocus'));
     assert.ok(!w.puts.includes('/'));
   }
 });
@@ -171,12 +165,12 @@ void test('RSC, foreign requests and unrelated app paths do not pollute shell ca
   assert.equal(
     await fetchWorker(
       w,
-      new Request('https://focus.test/superfocus', { headers: { rsc: '1' } }),
+      new Request('https://focus.test/', { headers: { rsc: '1' } }),
     ),
     undefined,
   );
   assert.equal(
-    await fetchWorker(w, new Request('https://focus.test/superfocus?_rsc=123')),
+    await fetchWorker(w, new Request('https://focus.test/?_rsc=123')),
     undefined,
   );
   assert.equal(
@@ -189,11 +183,33 @@ void test('RSC, foreign requests and unrelated app paths do not pollute shell ca
   assert.equal(
     await fetchWorker(w, {
       method: 'GET',
-      url: 'https://focus.test/other-app',
+      url: 'https://focus.test/superfocus',
       mode: 'navigate',
       headers: new Headers(),
     }),
     undefined,
   );
   assert.equal(w.puts.length, 0);
+});
+
+void test('notification clicks open the root workspace when no window exists', async () => {
+  const opened = [];
+  const w = worker();
+  w.clients.matchAll = async () => [];
+  w.clients.openWindow = async (path) => opened.push(path);
+  let completion = Promise.resolve();
+  let closed = false;
+  w.handlers.notificationclick({
+    notification: {
+      close() {
+        closed = true;
+      },
+    },
+    waitUntil(promise) {
+      completion = promise;
+    },
+  });
+  await completion;
+  assert.ok(closed);
+  assert.deepEqual(opened, ['/']);
 });

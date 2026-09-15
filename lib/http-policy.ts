@@ -1,4 +1,4 @@
-// Shared by server middleware and generated Cloudflare/Vercel asset rules.
+// Shared by server middleware, Nitro runtime and Workers _headers.
 export const securityHeaders: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'SAMEORIGIN',
@@ -15,7 +15,6 @@ export const documentCacheHeaders: Record<string, string> = {
   // Cache Storage deliberately retains a complete public shell + its CSP offline.
   'Cache-Control': 'private, no-store',
   'CDN-Cache-Control': 'no-store',
-  'Vercel-CDN-Cache-Control': 'no-store',
 };
 const revalidate = 'public, max-age=0, must-revalidate';
 const immutable = 'public, max-age=31536000, immutable';
@@ -32,6 +31,10 @@ export const assetRules: { path: string; headers: Record<string, string> }[] = [
     },
   },
   { path: '/manifest.webmanifest', headers: { 'Cache-Control': revalidate } },
+  {
+    path: '/og/superfocus-v2.png',
+    headers: { 'Cache-Control': immutable, 'Content-Type': 'image/png' },
+  },
   { path: '/_next/static/*', headers: { 'Cache-Control': immutable } },
   {
     path: '/fonts/geist-sans-v1.7.2.woff2',
@@ -54,14 +57,14 @@ export const assetRules: { path: string; headers: Record<string, string> }[] = [
     path: '/vinext-client-entry-manifest.json',
     headers: { 'Cache-Control': revalidate },
   },
-  ...['/robots.txt', '/llms.txt', '/superfocus/llms.txt'].map((path) => ({
+  ...['/robots.txt', '/llms.txt'].map((path) => ({
     path,
     headers: {
       'Cache-Control': revalidate,
       'Content-Type': 'text/plain; charset=utf-8',
     },
   })),
-  ...['/sitemap.xml', '/superfocus/sitemap.xml'].map((path) => ({
+  ...['/sitemap.xml'].map((path) => ({
     path,
     headers: {
       'Cache-Control': revalidate,
@@ -69,13 +72,23 @@ export const assetRules: { path: string; headers: Record<string, string> }[] = [
     },
   })),
   {
-    path: '/superfocus/index.md',
+    path: '/index.md',
     headers: {
       'Cache-Control': revalidate,
       'Content-Type': 'text/markdown; charset=utf-8',
-      Link: '</superfocus/llms.txt>; rel="describedby"',
+      Link: '</llms.txt>; rel="describedby"',
     },
   },
+];
+
+// Nitro translates ** wildcards into Workers static-asset header rules.
+export const hostingRules = [
+  { path: '/**', headers: securityHeaders },
+  { path: '/', headers: documentCacheHeaders },
+  ...assetRules.map(({ path, headers }) => ({
+    path: path.replace('/*', '/**'),
+    headers,
+  })),
 ];
 
 export function assetHeaders(

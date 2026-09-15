@@ -714,13 +714,10 @@ export default function SuperFocus({
             target="_blank"
             rel="noreferrer"
           >
-            a lowkey.tools creation <ArrowUpRight size={14} />
+            your lowkey corner <ArrowUpRight size={14} />
           </a>
           <div className="sidebar-makers">
-            <a href="https://owleye.dev">By OwlEye Analytics ↗</a>
-            <a href="https://shrinath.me" rel="author">
-              Built by Shrinath ↗
-            </a>
+            <a href="#makers">The people behind the pause</a>
             <a href="#about">About SuperFocus & FAQ</a>
           </div>
         </SidebarFooter>
@@ -1648,7 +1645,18 @@ export default function SuperFocus({
                   target="_blank"
                   rel="me author noopener noreferrer"
                 >
-                  Shrinath
+                  Shrinath Prabhu · shrinath.me
+                </a>
+                .
+              </p>
+              <p>
+                A little more done. A little more{' '}
+                <a
+                  href="https://lowkey.tools"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  lowkey.tools
                 </a>
                 .
               </p>

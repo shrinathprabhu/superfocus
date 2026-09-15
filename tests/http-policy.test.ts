@@ -1,9 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import {
   assetHeaders,
-  assetRules,
   contentSecurityPolicy,
   createNonce,
   documentCacheHeaders,
@@ -42,7 +40,6 @@ void test('production CSP permits required local features and rejects executable
 void test('HTML cannot enter CDN caches and only versioned assets are immutable', () => {
   assert.equal(documentCacheHeaders['Cache-Control'], 'private, no-store');
   assert.equal(documentCacheHeaders['CDN-Cache-Control'], 'no-store');
-  assert.equal(documentCacheHeaders['Vercel-CDN-Cache-Control'], 'no-store');
   for (const path of [
     '/_next/static/chunks/app-123.js',
     '/fonts/geist-sans-v1.7.2.woff2',
@@ -53,8 +50,8 @@ void test('HTML cannot enter CDN caches and only versioned assets are immutable'
     '/sw.js',
     '/manifest.webmanifest',
     '/robots.txt',
-    '/superfocus/sitemap.xml',
-    '/superfocus/index.md',
+    '/sitemap.xml',
+    '/index.md',
   ]) {
     assert.equal(
       assetHeaders(path)!['Cache-Control'],
@@ -66,48 +63,6 @@ void test('HTML cannot enter CDN caches and only versioned assets are immutable'
       'immutable',
     ),
   );
-  assert.equal(assetHeaders('/superfocus'), undefined);
+  assert.equal(assetHeaders('/'), undefined);
   assert.equal(assetHeaders('/unknown'), undefined);
-});
-
-void test('Cloudflare and Vercel publish the same security and asset policies', () => {
-  const vercel = JSON.parse(readFileSync('vercel.json', 'utf8'));
-  const cloudflare = readFileSync('public/_headers', 'utf8');
-  const common = vercel.headers.find(
-    (rule: { source: string }) => rule.source === '/:path*',
-  );
-  assert.deepEqual(
-    Object.fromEntries(
-      common.headers.map(({ key, value }: { key: string; value: string }) => [
-        key,
-        value,
-      ]),
-    ),
-    securityHeaders,
-  );
-  for (const { path, headers } of assetRules) {
-    const rule = vercel.headers.find(
-      (r: { source: string }) => r.source === path.replace('/*', '/:path*'),
-    );
-    assert.ok(rule, path);
-    assert.deepEqual(
-      Object.fromEntries(
-        rule.headers.map(({ key, value }: { key: string; value: string }) => [
-          key,
-          value,
-        ]),
-      ),
-      headers,
-    );
-    for (const [key, value] of Object.entries(headers))
-      assert.ok(cloudflare.includes(`  ${key}: ${value}`));
-  }
-  assert.ok(
-    !JSON.stringify(vercel).includes('nonce-'),
-    'Never bake a reusable nonce into CDN configuration',
-  );
-  assert.ok(
-    !('rewrites' in vercel),
-    'Do not send public traffic to the private preview',
-  );
 });
