@@ -6,7 +6,16 @@
   src: url('/fonts/geist-sans-v1.7.2.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
+}
+/* Match the bundled Geist metrics if the preloaded font is not ready yet. */
+@font-face {
+  font-family: 'Geist Fallback';
+  src: local('Arial');
+  size-adjust: 102.4585%;
+  ascent-override: 98.0885%;
+  descent-override: 28.7921%;
+  line-gap-override: 0%;
 }
 @custom-variant dark (&:is(.dark *));
 @theme inline {
@@ -46,7 +55,7 @@
 }
 :root,
 .dark {
-  --font-geist-sans: 'Geist', Arial, Helvetica, sans-serif;
+  --font-geist-sans: 'Geist', 'Geist Fallback', Arial, Helvetica, sans-serif;
   --background: #121218;
   --foreground: #f2f0f8;
   --card: #1b1b23;
@@ -61,6 +70,14 @@
 * {
   box-sizing: border-box;
   border-color: var(--border);
+}
+html {
+  scrollbar-gutter: stable;
+}
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
 }
 body {
   margin: 0;
@@ -86,7 +103,7 @@ button:disabled {
 button,
 a {
   transition:
-    background 0.18s,
+    background-color 0.18s,
     color 0.18s,
     opacity 0.18s;
 }
@@ -218,7 +235,28 @@ a {
   align-items: center;
   gap: 10px;
 }
+.topbar > span:first-child {
+  min-width: 0;
+}
+.topbar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mini-timer-slot {
+  display: flex;
+  justify-content: flex-end;
+  width: 5.75rem;
+  height: 2rem;
+  flex: 0 0 5.75rem;
+}
 .local-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 7.75rem;
+  white-space: nowrap;
   font-size: 12px;
   border: 1px solid #32343d;
   border-radius: 20px;
@@ -233,6 +271,8 @@ a {
   display: inline-block;
 }
 .main-content {
+  width: 100%;
+  min-width: 0;
   max-width: 1320px;
   margin: 0 auto;
   padding: 39px 40px 24px;
@@ -243,6 +283,9 @@ a {
   justify-content: space-between;
   margin-bottom: 32px;
   gap: 20px;
+}
+.page-heading > div {
+  min-width: 0;
 }
 .eyebrow {
   color: #aaa1bc;
@@ -265,6 +308,8 @@ a {
   font-size: 14px;
 }
 .date-label {
+  flex: 0 0 10.5rem;
+  justify-content: flex-end;
   color: #b5afc2;
   font-size: 14px;
   display: flex;
@@ -276,6 +321,10 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(285px, 1fr);
   gap: 23px;
+}
+.focus-grid > *,
+.right-stack {
+  min-width: 0;
 }
 .timer-card {
   border-radius: 18px;
@@ -301,11 +350,18 @@ a {
   margin-bottom: 23px;
 }
 .timer-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
   background: #211e2b !important;
   padding: 5px !important;
   height: 41px !important;
   border: 1px solid #40364c;
   gap: 1px;
+}
+.timer-card > [data-slot='tabs'] {
+  width: min(100%, 350px);
+  min-width: 0;
 }
 .timer-tabs [data-slot='tabs-trigger'] {
   padding: 7px 14px;
@@ -416,6 +472,9 @@ a {
 }
 .session-dots {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: 2.25rem;
   align-items: center;
   gap: 7px;
   margin-top: 23px;
@@ -667,6 +726,17 @@ h2 {
     height: 65px;
     padding: 0 18px;
   }
+  .topbar-icon {
+    display: none;
+  }
+  .local-badge {
+    min-width: 7rem;
+    padding-inline: 7px;
+  }
+  .mini-timer-slot {
+    width: 4.75rem;
+    flex-basis: 4.75rem;
+  }
   .focus-grid {
     grid-template-columns: 1fr;
   }
@@ -779,8 +849,9 @@ h2 {
 }
 .topbar-right {
   display: flex;
-  gap: 15px;
+  gap: 8px;
   align-items: center;
+  flex-shrink: 0;
 }
 .mini-timer {
   border: 1px solid #5b4770;
@@ -801,6 +872,11 @@ h2 {
   width: 25px;
   height: 25px;
 }
+.timer-top > .eyebrow {
+  min-height: 3em;
+  display: flex;
+  align-items: center;
+}
 .timer-dial {
   margin-top: 16px;
 }
@@ -810,7 +886,12 @@ h2 {
   stroke: #d7b0ff;
   opacity: 0.8;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.5s linear;
+  /* Update once per second without a continuous SVG paint animation. */
+  transition: none;
+}
+.timer-dial p {
+  min-height: 3em;
+  max-width: 100%;
 }
 .focus-task-select {
   display: flex;
@@ -878,6 +959,14 @@ h2 {
 .sound-title h2 {
   overflow-wrap: anywhere;
 }
+.sound-title :is(h2, p) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.5;
+  min-height: 3em;
+}
 .sound-title > .icon-button {
   width: 26px;
 }
@@ -933,6 +1022,22 @@ h2 {
 }
 .task-list {
   margin-top: 20px;
+}
+.radar-tasks {
+  height: 18rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.radar-tasks:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.radar-tasks .task-list {
+  margin-top: 16px;
+}
+.radar-tasks .task-empty {
+  min-height: 100%;
+  justify-content: center;
 }
 .task-row {
   display: flex;
@@ -1033,6 +1138,30 @@ h2 {
   margin-bottom: 22px;
   color: #d8c8e8;
   font-size: 14px;
+}
+.workspace-notices {
+  position: fixed;
+  z-index: 40;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  width: min(26rem, calc(100% - 2rem));
+  max-height: 45dvh;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+.workspace-notices > * {
+  margin: 0;
+  pointer-events: auto;
+  box-shadow: 0 8px 28px #0004;
+}
+.workspace-notices .notice {
+  flex-wrap: wrap;
+}
+.workspace-notices .notice > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .notice > span {
   flex: 1;
@@ -1301,7 +1430,9 @@ h2 {
   width: 100%;
   background: linear-gradient(#c5a0e5, #70518c);
   border-radius: 6px;
-  min-height: 2px;
+  height: 100%;
+  transform-origin: bottom;
+  transition: transform 180ms ease-out;
 }
 .library-player {
   display: grid;
@@ -1819,6 +1950,46 @@ h2 {
   gap: 10px;
   place-items: start;
   text-align: left;
+}
+
+/* Brief compositor-friendly entrances; no animated widths or heights. */
+@media (prefers-reduced-motion: no-preference) {
+  .main-content
+    > :is(
+      .focus-grid,
+      .task-panel,
+      .sprint-toolbar,
+      .planner-panel,
+      .goals-heading,
+      .goals-grid,
+      .goal-empty,
+      .weekly-panel,
+      .library-player,
+      .tracks-grid,
+      .settings-layout
+    ),
+  .workspace-notices > * {
+    animation: workspace-enter 160ms ease-out;
+  }
+}
+@keyframes workspace-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Disable the primitive's broad transition instead of animating layout. */
+[data-slot='progress-indicator'] {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart-track > div {
+    transition: none;
+  }
 }
 
 .skip-link {

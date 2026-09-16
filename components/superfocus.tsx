@@ -67,12 +67,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useSuperfocus } from '@/hooks/use-superfocus';
 import { useMusic } from '@/hooks/use-music';
+import { TimerDisplay } from '@/components/timer-display';
 import { Picker, TaskEditor, GoalEditor } from '@/components/controls';
 import {
   initialState,
-  localDay,
   remaining,
-  displayTime,
   sprintFor,
   isOpen,
   pendingReview,
@@ -84,7 +83,6 @@ import {
   statusLabels,
   cycles,
   validateBackup,
-  addDays,
   type Task,
   type Goal,
   type Mode,
@@ -94,6 +92,7 @@ import {
 } from '@/lib/domain';
 import { primeAlarm, ringAlarm } from '@/lib/audio';
 import { site } from '@/lib/site-content';
+import { focusStats } from '@/lib/focus-stats';
 type View = 'focus' | 'planner' | 'goals' | 'music' | 'settings';
 const navigation = [
   { icon: Timer, label: 'Focus', id: 'focus' },
@@ -207,46 +206,58 @@ export default function SuperFocus({
     reviewedDay = useRef(''),
     uploadRef = useRef<HTMLInputElement>(null),
     importRef = useRef<HTMLInputElement>(null);
-  const sprint = sprintFor(s.settings, today, sprintOffset),
-    review = pendingReview(s.tasks, today),
-    todaySessions = s.sessions.filter(
-      (x) => x.mode === 'focus' && localDay(x.completedAt) === today,
+  const sprint = useMemo(
+      () => sprintFor(s.settings, today, sprintOffset),
+      [s.settings.cycle, s.settings.anchor, today, sprintOffset],
     ),
-    dailyMinutes = todaySessions.reduce((n, x) => n + x.minutes, 0),
-    todayDone = s.tasks.filter(
-      (t) => t.completedAt && localDay(t.completedAt) === today,
-    ).length;
-  const currentSprint = sprintFor(s.settings, today),
-    time = remaining(s.timer, now),
+    review = useMemo(() => pendingReview(s.tasks, today), [s.tasks, today]),
+    stats = useMemo(
+      () => focusStats(s.sessions, s.tasks, today),
+      [s.sessions, s.tasks, today],
+    );
+  const currentSprint = useMemo(
+      () => sprintFor(s.settings, today),
+      [s.settings.cycle, s.settings.anchor, today],
+    ),
     running = s.timer.endAt !== null,
-    focusCount = s.sessions.filter((x) => x.mode === 'focus').length,
-    sessionNumber = (focusCount % s.settings.longEvery) + 1;
-  const activeTasks = s.tasks.filter(
-      (t) =>
-        isOpen(t) &&
-        t.plannedDate <= today &&
-        t.plannedDate >= currentSprint.start,
+    sessionNumber = (stats.focusCount % s.settings.longEvery) + 1;
+  const activeTasks = useMemo(
+      () =>
+        s.tasks.filter(
+          (t) =>
+            isOpen(t) &&
+            t.plannedDate <= today &&
+            t.plannedDate >= currentSprint.start,
+        ),
+      [s.tasks, today, currentSprint.start],
     ),
-    sprintTasks = s.tasks.filter(
-      (t) => t.plannedDate >= sprint.start && t.plannedDate <= sprint.end,
+    sprintTasks = useMemo(
+      () =>
+        s.tasks.filter(
+          (t) => t.plannedDate >= sprint.start && t.plannedDate <= sprint.end,
+        ),
+      [s.tasks, sprint.start, sprint.end],
     ),
-    visibleTasks = (
-      view === 'focus'
-        ? activeTasks
-        : sprintTasks.filter((t) =>
-            filter === 'open'
-              ? isOpen(t)
-              : filter === 'done'
-                ? t.status === 'done'
-                : filter === 'archived'
-                  ? t.status === 'abandoned'
-                  : true,
-          )
-    ).sort(
-      (a, b) =>
-        a.plannedDate.localeCompare(b.plannedDate) ||
-        (a.deadline || 'z').localeCompare(b.deadline || 'z') ||
-        a.createdAt - b.createdAt,
+    visibleTasks = useMemo(
+      () =>
+        (view === 'focus'
+          ? [...activeTasks]
+          : sprintTasks.filter((t) =>
+              filter === 'open'
+                ? isOpen(t)
+                : filter === 'done'
+                  ? t.status === 'done'
+                  : filter === 'archived'
+                    ? t.status === 'abandoned'
+                    : true,
+            )
+        ).sort(
+          (a, b) =>
+            a.plannedDate.localeCompare(b.plannedDate) ||
+            (a.deadline || 'z').localeCompare(b.deadline || 'z') ||
+            a.createdAt - b.createdAt,
+        ),
+      [view, activeTasks, sprintTasks, filter],
     );
   const heading = titles[view];
   useEffect(() => {
@@ -279,11 +290,6 @@ export default function SuperFocus({
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
-  useEffect(() => {
-    document.title = running
-      ? `${displayTime(time)} · ${s.timer.mode === 'focus' ? 'Focus' : 'Break'} — SuperFocus`
-      : site.title;
-  }, [running, time, s.timer.mode]);
   const settings = (patch: Partial<Settings>) =>
     change((v) => ({ ...v, settings: { ...v.settings, ...patch } }));
   const saveTask = async (t: Task) =>
@@ -598,15 +604,18 @@ export default function SuperFocus({
       <div className="volume-control">
         <Volume2 size={15} />
         <Slider
-          value={[s.settings.volume * 100]}
+          value={[music.volume * 100]}
           onValueChange={(v) =>
-            void settings({ volume: (Array.isArray(v) ? v[0] : v) / 100 })
+            music.setVolume((Array.isArray(v) ? v[0] : v) / 100)
+          }
+          onValueCommitted={(v) =>
+            void music.commitVolume((Array.isArray(v) ? v[0] : v) / 100)
           }
           max={100}
           step={1}
           aria-label="Music volume"
         />
-        <span>{Math.round(s.settings.volume * 100)}%</span>
+        <span>{Math.round(music.volume * 100)}%</span>
       </div>
     </>
   );
@@ -703,11 +712,14 @@ export default function SuperFocus({
               onSelect={setView}
             />
           </SidebarMenu>
-          {!installed && (
-            <button className="install-sidebar" onClick={() => void install()}>
-              <Download size={15} /> Install SuperFocus
-            </button>
-          )}
+          <button
+            className="install-sidebar"
+            disabled={installed}
+            onClick={() => void install()}
+          >
+            {installed ? <Check size={15} /> : <Download size={15} />}
+            {installed ? 'SuperFocus installed' : 'Install SuperFocus'}
+          </button>
           <a
             className="lowkey"
             href="https://lowkey.tools"
@@ -726,18 +738,23 @@ export default function SuperFocus({
         <header className="topbar">
           <span>
             <SidebarTrigger className="mobile-trigger" />
-            <Timer size={17} />{' '}
-            {view === 'focus'
-              ? 'Your focus space'
-              : (navigation.find((n) => n.id === view)?.label ?? 'Settings')}
+            <Timer size={17} className="topbar-icon" aria-hidden="true" />
+            <span className="topbar-title">
+              {view === 'focus'
+                ? 'Your focus space'
+                : (navigation.find((n) => n.id === view)?.label ?? 'Settings')}
+            </span>
           </span>
           <span className="topbar-right">
-            {running && view !== 'focus' && (
-              <button className="mini-timer" onClick={() => setView('focus')}>
-                <Timer size={14} />
-                {displayTime(time)}
-              </button>
-            )}
+            <span className="mini-timer-slot">
+              {view !== 'focus' && (
+                <TimerDisplay
+                  timer={s.timer}
+                  compact
+                  onOpen={() => setView('focus')}
+                />
+              )}
+            </span>
             <span className="local-badge">
               {offline ? <WifiOff size={13} /> : <i />}
               {offline ? 'Offline' : 'Local & private'}
@@ -754,7 +771,7 @@ export default function SuperFocus({
               </h1>
               <p>{heading.description}</p>
             </div>
-            <span className="date-label" suppressHydrationWarning>
+            <span className="date-label">
               <CalendarDays size={16} />
               {now
                 ? new Date(now).toLocaleDateString(undefined, {
@@ -762,47 +779,49 @@ export default function SuperFocus({
                     day: 'numeric',
                     month: 'short',
                   })
-                : 'Your daily workspace'}
+                : '\u00a0'}
             </span>
           </div>
-          {error && (
-            <div className="notice error-notice" role="alert">
-              <span>{error}</span>
+          <div className="workspace-notices">
+            {error && (
+              <div className="notice error-notice" role="alert">
+                <span>{error}</span>
+                <button
+                  className="secondary"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {notice && (
+              <output className="notice">
+                <CheckCircle2 size={17} />
+                <span>{notice}</span>
+                <button
+                  className="icon-button"
+                  aria-label="Dismiss message"
+                  onClick={() => setNotice('')}
+                >
+                  <X size={16} />
+                </button>
+              </output>
+            )}
+            {review.length > 0 && !reviewOpen && (
               <button
-                className="secondary"
-                onClick={() => window.location.reload()}
+                className="review-banner"
+                onClick={() => setReviewOpen(true)}
               >
-                Retry
+                <ArrowRight size={17} />
+                <span>
+                  {review.length} unfinished{' '}
+                  {review.length === 1 ? 'task needs' : 'tasks need'} a fresh
+                  plan.
+                </span>{' '}
+                Review <ArrowUpRight size={15} />
               </button>
-            </div>
-          )}
-          {notice && (
-            <output className="notice">
-              <CheckCircle2 size={17} />
-              <span>{notice}</span>
-              <button
-                className="icon-button"
-                aria-label="Dismiss message"
-                onClick={() => setNotice('')}
-              >
-                <X size={16} />
-              </button>
-            </output>
-          )}
-          {review.length > 0 && !reviewOpen && (
-            <button
-              className="review-banner"
-              onClick={() => setReviewOpen(true)}
-            >
-              <ArrowRight size={17} />
-              <span>
-                {review.length} unfinished{' '}
-                {review.length === 1 ? 'task needs' : 'tasks need'} a fresh
-                plan.
-              </span>{' '}
-              Review <ArrowUpRight size={15} />
-            </button>
-          )}
+            )}
+          </div>
           {view === 'focus' && (
             <>
               <div className="focus-grid">
@@ -842,36 +861,7 @@ export default function SuperFocus({
                       {s.timer.mode === 'focus' ? 'Focus' : 'Break'} timer
                     </TabsContent>
                   </Tabs>
-                  <div className={`timer-dial ${running ? 'running' : ''}`}>
-                    <svg viewBox="0 0 300 300" aria-hidden="true">
-                      <circle cx="150" cy="150" r="138" />
-                      <circle
-                        className="timer-progress"
-                        cx="150"
-                        cy="150"
-                        r="126"
-                        strokeDasharray="791.68"
-                        strokeDashoffset={791.68 * (time / s.timer.duration)}
-                      />
-                    </svg>
-                    <div>
-                      <span
-                        className="timer-digits"
-                        aria-label={`${Math.floor(time / 60)} minutes ${time % 60} seconds`}
-                      >
-                        {displayTime(time).split(':')[0]}
-                        <span>:</span>
-                        {displayTime(time).split(':')[1]}
-                      </span>
-                      <p>
-                        {s.timer.mode === 'focus'
-                          ? running
-                            ? 'Just you and the next small step'
-                            : 'A little focus goes a long way'
-                          : 'Breathe. Stretch. Look away.'}
-                      </p>
-                    </div>
-                  </div>
+                  <TimerDisplay timer={s.timer} />
                   <div className="timer-actions">
                     <button
                       className="primary"
@@ -935,11 +925,12 @@ export default function SuperFocus({
                       }}
                     />
                   </div>
-                  {wakeActive && (
-                    <span className="awake-label">
-                      <Monitor size={12} /> Screen staying awake
-                    </span>
-                  )}
+                  <span
+                    className="awake-label"
+                    style={{ visibility: wakeActive ? 'visible' : 'hidden' }}
+                  >
+                    <Monitor size={12} /> Screen staying awake
+                  </span>
                 </section>
                 <div className="right-stack">
                   <section className="panel">
@@ -948,29 +939,29 @@ export default function SuperFocus({
                       <Zap size={18} />
                     </div>
                     <div className="rhythm-number">
-                      {todaySessions.length}{' '}
+                      {stats.todayCount}{' '}
                       <span>/ {s.settings.dailyTarget} sessions</span>
                     </div>
                     <Progress
                       className="daily-progress"
                       value={Math.min(
                         100,
-                        (todaySessions.length / s.settings.dailyTarget) * 100,
+                        (stats.todayCount / s.settings.dailyTarget) * 100,
                       )}
                       aria-label="Daily focus session goal"
                     />
                     <p className="muted rhythm-caption">
-                      {todaySessions.length >= s.settings.dailyTarget
+                      {stats.todayCount >= s.settings.dailyTarget
                         ? 'Your daily goal, reached. Nicely done.'
                         : 'Every focused minute is a step forward.'}
                     </p>
                     <div className="stats-pair">
                       <div>
-                        <strong>{minutesLabel(dailyMinutes)}</strong>
+                        <strong>{minutesLabel(stats.dailyMinutes)}</strong>
                         <span>Focus time</span>
                       </div>
                       <div>
-                        <strong>{todayDone}</strong>
+                        <strong>{stats.todayDone}</strong>
                         <span>Tasks completed</span>
                       </div>
                     </div>
@@ -1000,15 +991,19 @@ export default function SuperFocus({
                     <Plus size={16} /> Add task
                   </button>
                 </div>
-                {taskRows(visibleTasks)}
-                {s.tasks.length > 0 && (
-                  <button
-                    className="text-button planner-link"
-                    onClick={() => setView('planner')}
-                  >
-                    Open sprint planner <ArrowRight size={14} />
-                  </button>
-                )}
+                <div
+                  className="radar-tasks"
+                  tabIndex={0}
+                  aria-label="Tasks on your radar"
+                >
+                  {taskRows(visibleTasks)}
+                </div>
+                <button
+                  className="text-button planner-link"
+                  onClick={() => setView('planner')}
+                >
+                  Open sprint planner <ArrowRight size={14} />
+                </button>
               </section>
             </>
           )}
@@ -1119,9 +1114,7 @@ export default function SuperFocus({
               </div>
               <div className="goals-grid">
                 {s.goals.map((g) => {
-                  const minutes = s.sessions
-                      .filter((x) => x.mode === 'focus' && x.goalId === g.id)
-                      .reduce((n, x) => n + x.minutes, 0),
+                  const minutes = stats.minutesByGoal.get(g.id) ?? 0,
                     pct = Math.min(100, (minutes / g.target) * 100);
                   return (
                     <section className="panel goal-card" key={g.id}>
@@ -1155,12 +1148,7 @@ export default function SuperFocus({
                         {g.deadline
                           ? `${g.deadline < today && pct < 100 ? 'Past target · ' : ''}Target ${shortDate(g.deadline)}`
                           : 'At your own pace'}{' '}
-                        ·{' '}
-                        {
-                          s.tasks.filter((t) => t.goalId === g.id && isOpen(t))
-                            .length
-                        }{' '}
-                        active tasks
+                        · {stats.tasksByGoal.get(g.id) ?? 0} active tasks
                       </p>
                     </section>
                   );
@@ -1196,34 +1184,15 @@ export default function SuperFocus({
                   </span>
                 </div>
                 <div className="week-chart">
-                  {Array.from({ length: 7 }, (_, i) => {
-                    const day = addDays(today, i - 6),
-                      minutes = s.sessions
-                        .filter(
-                          (x) =>
-                            x.mode === 'focus' &&
-                            localDay(x.completedAt) === day,
-                        )
-                        .reduce((n, x) => n + x.minutes, 0),
-                      max = Math.max(
-                        60,
-                        ...Array.from({ length: 7 }, (_, j) =>
-                          s.sessions
-                            .filter(
-                              (x) =>
-                                x.mode === 'focus' &&
-                                localDay(x.completedAt) ===
-                                  addDays(today, j - 6),
-                            )
-                            .reduce((n, x) => n + x.minutes, 0),
-                        ),
-                      );
+                  {stats.week.map(({ day, minutes }) => {
                     return (
                       <div className="chart-column" key={day}>
                         <span>{minutesLabel(minutes)}</span>
                         <div className="chart-track">
                           <div
-                            style={{ height: `${(minutes / max) * 100}%` }}
+                            style={{
+                              transform: `scaleY(${minutes / stats.weekMax})`,
+                            }}
                           />
                         </div>
                         <span>

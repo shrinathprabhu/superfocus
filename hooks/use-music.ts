@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { tracks } from '@/lib/audio';
 import {
   deleteMusic,
@@ -15,27 +15,31 @@ export function useMusic(
 ) {
   const [locals, setLocals] = useState<LocalTrack[]>([]),
     [playing, setPlaying] = useState(false),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [volume, setVolume] = useState(state?.settings.volume ?? 0.4);
   const audio = useRef<HTMLAudioElement | null>(null),
     current = useRef(state),
     shouldPlay = useRef(false);
   useEffect(() => {
     current.current = state;
   }, [state]);
-  const all = [
-    ...tracks.map((t) => ({ ...t, local: false })),
-    ...locals.map((t) => ({
-      id: t.id,
-      name: t.name,
-      description: 'Your audio · saved on this device',
-      color: '#7c94a8',
-      local: true,
-    })),
-  ];
+  const all = useMemo(
+    () => [
+      ...tracks.map((t) => ({ ...t, local: false })),
+      ...locals.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: 'Your audio · saved on this device',
+        color: '#7c94a8',
+        local: true,
+      })),
+    ],
+    [locals],
+  );
   const allRef = useRef(all);
   useEffect(() => {
     allRef.current = all;
-  });
+  }, [all]);
   const selected = all.find((t) => t.id === state?.settings.trackId) ?? all[0];
   const loadLocal = useCallback(
     () =>
@@ -119,7 +123,8 @@ export function useMusic(
       if (local) URL.revokeObjectURL(url);
     };
   }, [selected.id, selected.name, locals, notify]);
-  const volume = state?.settings.volume ?? 0.4;
+  const savedVolume = state?.settings.volume ?? 0.4;
+  useEffect(() => setVolume(savedVolume), [savedVolume]);
   useEffect(() => {
     if (audio.current) audio.current.volume = volume;
   }, [volume]);
@@ -234,6 +239,14 @@ export function useMusic(
     upload,
     remove,
     busy,
+    volume,
+    setVolume,
+    // Dragging updates playback immediately; persist only the committed value.
+    commitVolume: (value: number) =>
+      change((s) => ({
+        ...s,
+        settings: { ...s.settings, volume: value },
+      })),
     choose: async (id: string) => {
       shouldPlay.current = true;
       if (id === selected.id) {

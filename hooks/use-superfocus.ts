@@ -8,7 +8,7 @@ import {
 } from '@/lib/domain';
 import { readState, updateState } from '@/lib/storage';
 import { ringAlarm, scheduleAlarm, cancelScheduledAlarm } from '@/lib/audio';
-import { nextClockDelay } from '@/lib/clock';
+import { nextClockDelay, scheduleDeadline } from '@/lib/clock';
 export function useSuperfocus() {
   const [state, setState] = useState<AppState | null>(null),
     [error, setError] = useState(''),
@@ -115,9 +115,9 @@ export function useSuperfocus() {
       clearTimeout(timeout);
       const clock = Date.now();
       setNow(clock);
-      // Idle workspaces only need date/deadline updates each minute. Running
-      // timers stay aligned to their deadline and recover immediately on return.
-      timeout = setTimeout(tick, nextClockDelay(state?.timer.endAt, clock));
+      // Dates and overdue labels need minute updates. TimerDisplay owns seconds.
+      if (!document.hidden)
+        timeout = setTimeout(tick, nextClockDelay(null, clock));
     };
     tick();
     document.addEventListener('visibilitychange', tick);
@@ -125,6 +125,12 @@ export function useSuperfocus() {
       clearTimeout(timeout);
       document.removeEventListener('visibilitychange', tick);
     };
+  }, []);
+  useEffect(() => {
+    const endAt = state?.timer.endAt;
+    if (endAt == null) return;
+    // Completion stays deadline-driven even with no visible timer readout.
+    return scheduleDeadline(endAt, () => setNow(Date.now()));
   }, [state?.timer.endAt]);
   useEffect(() => {
     if (!state?.timer.endAt) return;
@@ -200,7 +206,7 @@ export function useSuperfocus() {
       .finally(() => {
         busy.current = false;
       });
-  }, [now, change]);
+  }, [now, change, state?.timer.id, state?.timer.endAt]);
   useEffect(() => {
     if (
       !state?.settings.wakeLock ||
